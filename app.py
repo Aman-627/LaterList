@@ -34,7 +34,7 @@ LASTFM_API_URL = 'http://ws.audioscrobbler.com/2.0/'
 VALID_SECTIONS = ['movies', 'songs', 'bookmarks', 'books']
 
 
-def get_db_connection():
+def psycopg2.connect():
     try:
         conn = mysql.connector.connect(**DB_CONFIG)
         return conn
@@ -54,7 +54,7 @@ def index():
     user_id = session['user_id']
     user_data = {}
     recommendation = session.pop('recommendation', None)
-    conn = get_db_connection()
+    conn = psycopg2.connect()
     if not conn:
         flash("Database connection error.", "error")
         return render_template('index.html', data={}, username=session.get('username'), recommendation=recommendation)
@@ -72,7 +72,7 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        conn = get_db_connection()
+        conn = psycopg2.connect()
         if not conn:
             flash("Database connection error.", "error")
             return render_template('login.html')
@@ -105,7 +105,7 @@ def register():
         if not username or not password:
             flash("Username and password are required.", "warning")
             return redirect(url_for('register'))
-        conn = get_db_connection()
+        conn = psycopg2.connect()
         if not conn:
             flash("Database connection error.", "error")
             return redirect(url_for('register'))
@@ -146,7 +146,7 @@ def add_item():
     user_id = session['user_id']
     title = request.form.get('title')
     link = request.form.get('link')
-    conn = get_db_connection()
+    conn = psycopg2.connect()
     if not conn:
         flash("Database connection error.", "error")
         return redirect(url_for('index'))
@@ -181,7 +181,7 @@ def add_recommendation():
     link = request.form.get('link') or '#'
 
 
-    conn = get_db_connection()
+    conn = psycopg2.connect()
     if not conn:
         flash("Database connection error.", "error")
         return redirect(url_for('index'))
@@ -204,7 +204,7 @@ def delete_item(section, item_id):
         flash("Invalid section.", "error")
         return redirect(url_for('index'))
     user_id = session['user_id']
-    conn = get_db_connection()
+    conn = psycopg2.connect()
     if not conn:
         flash("Database connection error.", "error")
         return redirect(url_for('index'))
@@ -224,7 +224,7 @@ def admin_view():
         flash("You do not have permission to view this page.", "error")
         return redirect(url_for('index'))
     all_data = {}
-    conn = get_db_connection()
+    conn = psycopg2.connect()
     if not conn:
         flash("Database connection error.", "error")
         return redirect(url_for('index'))
@@ -244,7 +244,7 @@ def admin_delete_item(section, item_id):
     if section not in VALID_SECTIONS:
         flash("Invalid section.", "error")
         return redirect(url_for('admin_view'))
-    conn = get_db_connection()
+    conn = psycopg2.connect()
     if not conn:
         flash("Database connection error.", "error")
         return redirect(url_for('admin_view'))
@@ -268,7 +268,7 @@ def recommend_song():
         flash("Last.fm API key is not configured. Please set LASTFM_API_KEY environment variable.", "error")
         return redirect(url_for('index'))
     
-    conn = get_db_connection()
+    conn = psycopg2.connect()
     cursor = conn.cursor(dictionary=True)
     cursor.execute("SELECT title FROM songs WHERE user_id = %s", (session['user_id'],))
     songs = cursor.fetchall()
@@ -365,7 +365,7 @@ def recommend_book():
         flash("Google Books API key is not configured. Please set GOOGLE_BOOKS_API_KEY environment variable.", "error")
         return redirect(url_for('index'))
 
-    conn = get_db_connection()
+    conn = psycopg2.connect()
     cursor = conn.cursor(dictionary=True)
     cursor.execute("SELECT title FROM books WHERE user_id = %s", (session['user_id'],))
     books = cursor.fetchall()
