@@ -1,214 +1,321 @@
-{% extends "layout.html" %}
-{% block title %}Dashboard{% endblock %}
-{% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <h1 class="text-3xl font-bold text-white mb-8">Welcome back, {{ username }}!</h1>
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div class="lg:col-span-2 space-y-8">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}LaterList - Your Private Media Sanctuary{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827;
+            /* Dark Slate Blue */
+            color: #E5E7EB;
+        }
 
-            <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6 shadow-sm">
-                <h2 class="text-2xl font-semibold text-white mb-4">Add to Your Collection</h2>
-                <form action="{{ url_for('add_item') }}" method="POST" class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input type="text" name="title" placeholder="Title" required
-                            class="block w-full px-3 py-2 border border-gray-600 bg-gray-900 text-white rounded-md focus:outline-none focus:ring-sky-500 focus:border-sky-500">
-                        <input type="text" name="link" placeholder="Link/URL" required
-                            class="block w-full px-3 py-2 border border-gray-600 bg-gray-900 text-white rounded-md focus:outline-none focus:ring-sky-500 focus:border-sky-500">
-                    </div>
-                    <div>
-                        <label for="section-select"
-                            class="block text-sm font-medium text-gray-400 mb-2">Category</label>
-                        <select id="section-select" name="section"
-                            class="block w-full px-3 py-2 border border-gray-600 bg-gray-900 text-white rounded-md focus:outline-none focus:ring-sky-500 focus:border-sky-500">
-                            <option value="movies">Movie</option>
-                            <option value="songs">Song</option>
-                            <option value="bookmarks">Bookmark</option>
-                            <option value="books">Book</option>
-                        </select>
-                    </div>
-                    <button type="submit"
-                        class="w-full md:w-auto bg-sky-600 hover:bg-sky-500 text-white font-semibold py-2 px-6 rounded-md cta-button">Add
-                        Item</button>
+        .gradient-text {
+            background: linear-gradient(to right, #38bdf8, #a78bfa);
 
-                </form>
-            </div>
+            -webkit-text-fill-color: transparent;
+        }
 
-            <div class="bg-gray-800/50 border border-gray-700 rounded-xl shadow-sm">
-                <div class="p-6">
-                    <h2 class="text-2xl font-semibold text-white mb-4">Your Collection</h2>
-                    <div class="border-b border-gray-700">
-                        <nav id="tab-nav" class="-mb-px flex space-x-6" aria-label="Tabs">
-                            {% for section in data.keys() %}
-                            <button
-                                class="capitalize whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm focus:outline-none tab-button"
-                                data-target="tab-{{ section }}">
-                                {{ section }}
-                            </button>
-                            {% endfor %}
-                        </nav>
-                    </div>
-                </div>
+        .feature-card {
+            background-color: rgba(31, 41, 55, 0.5);
+            border: 1px solid rgba(55, 65, 81, 0.7);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
 
-                <div class="p-6">
-                    {% for section, items in data.items() %}
-                    <div id="tab-{{ section }}" class="tab-panel space-y-3">
-                        {% for item in items %}
-                        <div
-                            class="flex justify-between items-center bg-gray-900/70 p-3 rounded-lg hover:bg-gray-700/50 transition-colors duration-200">
-                            <a href="{{ item.link }}" target="_blank" rel="noopener noreferrer"
-                                class="text-sky-400 hover:text-sky-300 truncate" title="{{ item.title }}">
-                                {{ item.title }}
-                            </a>
-                            <form action="{{ url_for('delete_item', section=section, item_id=item.id) }}" method="POST">
-                                <button type="submit"
-                                    class="text-gray-500 hover:text-red-500 font-bold ml-4 transition-colors duration-200">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                        stroke-linejoin="round">
-                                        <polyline points="3 6 5 6 21 6"></polyline>
-                                        <path
-                                            d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
-                                        </path>
-                                        <line x1="10" y1="11" x2="10" y2="17"></line>
-                                        <line x1="14" y1="11" x2="14" y2="17"></line>
-                                    </svg>
-                                </button>
-                            </form>
-                        </div>
-                        {% else %}
-                        <div class="text-center py-8">
-                            <p class="text-gray-500">No items in this section yet.</p>
-                            <p class="text-gray-600 text-sm">Use the form above to add one!</p>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
 
-        <div class="lg:col-span-1 space-y-8">
-            <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6 feature-card ai-feature-card shadow-sm">
-                <div class="flex items-center mb-4">
-                    <div class="bg-gray-700 h-10 w-10 rounded-lg flex items-center justify-center mr-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                            class="text-sky-300">
-                            <path
-                                d="M9.5 2.1c.2-.5.8-.8 1.4-.8h1.2c.6 0 1.2.3 1.4.8l.9 2.1c.2.5.7.8 1.2.8h2.3c.6 0 1.1.4 1.2.9l.5 2.5c.1.5-.2 1-.7 1.2l-2 .9c-.4.2-.7.6-.5 1.1l1.1 2.4c.2.5 0 1.1-.5 1.3l-2.1.9c-.5.2-1 .1-1.3-.2l-1.8-1.8c-.4-.4-1-.4-1.4 0l-1.8 1.8c-.3.3-.8.4-1.3.2l-2.1-.9c-.5-.2-.7-.8-.5-1.3l1.1-2.4c.2-.5-.1-1-.5-1.1l-2-.9c-.5-.2-.8-.7-.7-1.2l.5-2.5c.1-.5.6-.9 1.2-.9h2.3c.5 0 1-.3 1.2-.8l.9-2.1z">
-                            </path>
-                        </svg>
-                    </div>
-                    <h2 class="text-2xl font-semibold text-white">Recommendation Assistant</h2>
-                </div>
-                <p class="text-gray-400 mb-4">
-                    Get a smart recommendation based on an item from your collection.
-                </p>
+        .ai-feature-card {
+            background: linear-gradient(145deg, rgba(31, 41, 55, 0.5), rgba(59, 130, 246, 0.1));
+        }
 
-                {% if recommendation %}
-                <div class="bg-gray-900/50 p-4 rounded-lg mb-4 text-center">
-                    <p class="text-sm text-gray-400">Because you saved <strong class="font-semibold text-gray-300">
-                            {{ recommendation.based_on }}</strong>, you might like:</p>
+        .cta-button {
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
 
-                    <div class="flex justify-center items-center gap-3 mt-1">
-                        <a href="{{ recommendation.link }}" target="_blank" rel="noopener noreferrer"
-                            title="Open in {{ 'Last.fm' if recommendation.section == 'songs' else 'Google Books' }}"
-                            class="font-bold text-sky-400 hover:text-sky-300 text-lg transition-colors">
-                            {{ recommendation.recommended_title }}
-                        </a>
+        .cta-button:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
 
-                        <form action="{{ url_for('add_recommendation') }}" method="POST">
-                            <input type="hidden" name="link" value="{{ recommendation.link }}">
-                            <input type="hidden" name="title" value="{{ recommendation.recommended_title }}">
-                            <input type="hidden" name="section" value="{{ recommendation.section }}">
-                            <button type="submit" title="Add to your collection"
-                                class="text-gray-400 hover:text-green-400 transition-colors duration-200">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <line x1="12" y1="8" x2="12" y2="16"></line>
-                                    <line x1="8" y1="12" x2="16" y2="12"></line>
-                                </svg>
-                            </button>
-                        </form>
-                    </div>
-                </div>
+<body class="text-gray-200">
+
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 z-50 bg-gray-900/50 backdrop-blur-sm border-b border-gray-800">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="{{ url_for('landing') }}" class="text-2xl font-bold tracking-tight">LaterList</a>
+
+            <nav class="hidden md:flex items-center space-x-8">
+                {% if page_type == 'landing' %}
+                <a href="#features" class="hover:text-sky-400 transition-colors">Features</a>
+                <a href="#ai-features" class="hover:text-sky-400 transition-colors">AI Magic</a>
+                <a href="#privacy" class="hover:text-sky-400 transition-colors">Privacy</a>
+                <a href="#testimonial" class="hover:text-sky-400 transition-colors">Testimonial</a>
                 {% endif %}
+            </nav>
 
-
-                <button id="surprise-btn" type="button"
-                    class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-4 rounded-md cta-button">
-                    ✨ Surprise Me!
-                </button>
-
-                <div id="recommendation-options" class="hidden space-y-3">
-                    <p class="text-sm text-gray-400 text-center">I'd like a recommendation for a...</p>
-                    <button type="button" disabled title="Coming Soon!"
-                        class="w-full bg-gradient-to-r from-sky-500 to-indigo-500 text-white font-semibold py-2 px-4 rounded-md cta-button opacity-50 cursor-not-allowed">
-                        Movie 🎬
-                    </button>
-                    <form action="{{ url_for('recommend_song') }}" method="POST">
-                        <button type="submit"
-                            class="w-full bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white font-semibold py-2 px-4 rounded-md cta-button">
-                            Song 🎵
-                        </button>
-                    </form>
-                    <form action="{{ url_for('recommend_book') }}" method="POST">
-                        <button type="submit"
-                            class="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold py-2 px-4 rounded-md cta-button">
-                            Book 📚
-                        </button>
-                    </form>
-                </div>
+            <div>
+                {% if 'user_id' in session %}
+                <a href="{{ url_for('index') }}"
+                    class="text-gray-300 hover:text-white font-semibold py-2 px-4 rounded-lg transition-colors">Dashboard</a>
+                <a href="{{ url_for('logout') }}"
+                    class="bg-red-600 hover:bg-red-500 text-white font-semibold py-2 px-5 rounded-lg cta-button">Logout</a>
+                {% else %}
+                <a href="{{ url_for('login') }}"
+                    class="text-gray-300 hover:text-white font-semibold py-2 px-4 rounded-lg transition-colors">Login</a>
+                <a href="{{ url_for('register') }}"
+                    class="bg-sky-500 hover:bg-sky-600 text-white font-semibold px-5 py-2 rounded-lg transition-colors cta-button">
+                    Get Started
+                </a>
+                {% endif %}
             </div>
         </div>
-    </div>
-</div>
+    </header>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const tabs = document.querySelectorAll('.tab-button');
-        const panels = document.querySelectorAll('.tab-panel');
+    <main class="pt-20">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+            {% for category, message in messages %}
+            {% set bg_color = 'bg-blue-500' %}
+            {% if category == 'success' %}{% set bg_color = 'bg-emerald-500' %}{% endif %}
+            {% if category == 'error' %}{% set bg_color = 'bg-red-500' %}{% endif %}
+            {% if category == 'warning' %}{% set bg_color = 'bg-yellow-500' %}{% endif %}
+            <div class="{{ bg_color }} text-white font-bold rounded-lg p-4 mb-4" role="alert">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
 
-        // Logic for collection tabs
-        function setActiveTab(tabButton) {
-            tabs.forEach(button => {
-                button.classList.remove('text-sky-400', 'border-sky-400');
-                button.classList.add('text-gray-400', 'border-transparent', 'hover:text-gray-300', 'hover:border-gray-500');
-            });
-            panels.forEach(panel => {
-                panel.style.display = 'none';
-            });
-            tabButton.classList.remove('text-gray-400', 'border-transparent', 'hover:text-gray-300', 'hover:border-gray-500');
-            tabButton.classList.add('text-sky-400', 'border-sky-400');
-            const targetPanel = document.getElementById(tabButton.dataset.target);
-            if (targetPanel) {
-                targetPanel.style.display = 'block';
-            }
-        }
+        {% block content %}
+        <!-- Hero Section -->
+        <section class="text-center py-20 md:py-32 px-6">
+            <div class="container mx-auto">
+                <h2 class="text-4xl md:text-6xl font-extrabold tracking-tighter leading-tight mb-4">
+                    Your private corner of the internet.
+                </h2>
+                <p class="text-lg md:text-xl text-gray-400 max-w-3xl mx-auto mb-8">
+                    One simple, beautiful list for all the articles, books, and movies you want to get to. Now with AI
+                    to help you discover and decide. <span class="font-semibold text-gray-200">Just your stuff.</span>
+                </p>
+                <a href="{{ url_for('index') if 'user_id' in session else url_for('register') }}"
+                    class="bg-gradient-to-r from-sky-500 to-indigo-500 hover:from-sky-600 hover:to-indigo-600 text-white font-bold px-8 py-4 rounded-lg text-lg transition-all duration-300 cta-button">
+                    Create Your Sanctuary
+                </a>
+            </div>
+        </section>
 
-        if (tabs.length > 0) {
-            setActiveTab(tabs[0]);
-        }
+        <!-- Features Section -->
+        <section id="features" class="py-20 px-6 bg-gray-900">
+            <div class="container mx-auto">
+                <div class="text-center mb-12">
+                    <h3 class="text-3xl md:text-4xl font-bold mb-2">One list to rule them all.</h3>
+                    <p class="text-gray-400 max-w-2xl mx-auto">Stop juggling apps. LaterList brings everything you want
+                        to consume into one elegant, unified space.</p>
+                </div>
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Feature 1: Save Anything -->
+                    <div class="feature-card p-8 rounded-xl">
+                        <div class="bg-gray-700 h-12 w-12 rounded-lg flex items-center justify-center mb-6">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="text-sky-400">
+                                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                        </div>
+                        <h4 class="text-xl font-bold mb-3">Save Anything, From Anywhere</h4>
+                        <p class="text-gray-400">Articles, blog posts, books, movies, TV shows. If you can link to it,
+                            you can save it. </p>
+                    </div>
+                    <!-- Feature 2: Truly Personal Recs -->
+                    <div class="feature-card p-8 rounded-xl">
+                        <div class="bg-gray-700 h-12 w-12 rounded-lg flex items-center justify-center mb-6">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="text-sky-400">
+                                <path
+                                    d="M9.5 2.1c.2-.5.8-.8 1.4-.8h1.2c.6 0 1.2.3 1.4.8l.9 2.1c.2.5.7.8 1.2.8h2.3c.6 0 1.1.4 1.2.9l.5 2.5c.1.5-.2 1-.7 1.2l-2 .9c-.4.2-.7.6-.5 1.1l1.1 2.4c.2.5 0 1.1-.5 1.3l-2.1.9c-.5.2-1 .1-1.3-.2l-1.8-1.8c-.4-.4-1-.4-1.4 0l-1.8 1.8c-.3.3-.8.4-1.3.2l-2.1-.9c-.5-.2-.7-.8-.5-1.3l1.1-2.4c.2-.5-.1-1-.5-1.1l-2-.9c-.5-.2-.8-.7-.7-1.2l.5-2.5c.1-.5.6-.9 1.2-.9h2.3c.5 0 1-.3 1.2-.8l.9-2.1z">
+                                </path>
+                            </svg>
+                        </div>
+                        <h4 class="text-xl font-bold mb-3">Truly Personal Recommendations</h4>
+                        <p class="text-gray-400">Our discovery engine suggests new content based *strictly* on what
+                            you've saved. No ads, no sponsored content. Just your taste, reflected back at you.</p>
+                    </div>
+                    <!-- Feature 3: Privacy First -->
+                    <div class="feature-card p-8 rounded-xl">
+                        <div class="bg-gray-700 h-12 w-12 rounded-lg flex items-center justify-center mb-6">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="text-sky-400">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                        </div>
+                        <h4 class="text-xl font-bold mb-3">A Fort Knox for Your Data</h4>
+                        <p class="text-gray-400">Your list is yours alone. We don't track you across the web, and we'll
+                            never sell your data. You are the customer, not the product.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-        tabs.forEach(tab => {
-            tab.addEventListener('click', function () {
-                setActiveTab(this);
-            });
-        });
+        <!-- AI Features Section -->
+        <section id="ai-features" class="py-20 px-6">
+            <div class="container mx-auto">
+                <div class="text-center mb-12">
+                    <h3 class="text-3xl md:text-4xl font-bold mb-2">Go Beyond the List with LaterList</span></h3>
+                    <p class="text-gray-400 max-w-2xl mx-auto"></p>
+                </div>
+                <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                    <!-- Feature 1: recommendations -->
+                    <div class="feature-card ai-feature-card p-8 rounded-xl">
+                        <div class="bg-gray-700 h-12 w-12 rounded-lg flex items-center justify-center mb-6">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="text-sky-300">
+                                <path d="M12 3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2s2-.9 2-2V5c0-1.1-.9-2-2-2z"></path>
+                                <path d="M5 10v2c0 3.9 3.1 7 7 7s7-3.1 7-7v-2"></path>
+                                <line x1="12" y1="19" x2="12" y2="22"></line>
+                            </svg>
+                        </div>
+                        <h4 class="text-xl font-bold mb-3">✨ Recommendations </h4>
+                        <p class="text-gray-400">Have a song, movie, or book saved? We’ll recommend your next favorite in seconds!</p>
+                    </div>
+                    <!-- Feature 2: Discovery Helper -->
+                    <div class="feature-card ai-feature-card p-8 rounded-xl">
+                        <div class="bg-gray-700 h-12 w-12 rounded-lg flex items-center justify-center mb-6">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="text-sky-300">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                        </div>
+                        <h4 class="text-xl font-bold mb-3">✨ Discovery Helper</h4>
+                        <p class="text-gray-400">Feeling indecisive? Chat with our AI assistant. Tell it what you're in
+                            the mood for ("a sci-fi movie like Blade Runner") and it'll suggest gems from your list or
+                            find new ones that match your taste(coming soon).</p>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-        // --- NEW: Logic for interactive recommendation button ---
-        const surpriseBtn = document.getElementById('surprise-btn');
-        const recOptions = document.getElementById('recommendation-options');
+        <!-- Privacy Section -->
+        <section id="privacy" class="py-20 px-6 bg-gray-900">
+            <div class="container mx-auto grid md:grid-cols-2 gap-12 items-center">
+                <div class="text-center md:text-left">
+                    <h3 class="text-3xl md:text-4xl font-bold mb-4">You're in control
+                        , Always.</span></h3>
+                    <p class="text-gray-400 mb-4 text-lg">
+                        In an internet built on surveillance capitalism, LaterList is your refuge. We started this
+                        project because we believe you should be able to explore your interests without being a data
+                        point in someone else's spreadsheet.
+                    </p>
+                    <ul class="space-y-3 text-left">
+                        <li class="flex items-start">
+                            <svg class="w-6 h-6 text-green-400 mr-3 flex-shrink-0 mt-1" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span><strong class="text-gray-200">No Ad-Targeting:</strong> Your saved items are never
+                                used to target you with ads.</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-6 h-6 text-green-400 mr-3 flex-shrink-0 mt-1" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span><strong class="text-gray-200">No Data Selling:</strong> We will never sell or share
+                                your personal data with third parties. Period.</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-6 h-6 text-green-400 mr-3 flex-shrink-0 mt-1" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span><strong class="text-gray-200">You Own Your List:</strong> Export your data at any
+                                time. No lock-in.</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="flex justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+                        class="mx-auto text-sky-400">
+                        <title>A secure shield representing data privacy</title>
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="rgba(31, 41, 55, 0.7)"></path>
+                        <rect x="9" y="11" width="6" height="5" rx="1" fill="#111827" stroke="#38bdf8"
+                            stroke-width="1.5"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="#a78bfa" stroke-width="1.5"></path>
+                    </svg>
+                </div>
+        </section>
 
-        if (surpriseBtn && recOptions) {
-            surpriseBtn.addEventListener('click', function () {
-                surpriseBtn.classList.add('hidden'); // Hide the main button
-                recOptions.classList.remove('hidden'); // Show the three choices
-            });
-        }
-    });
-</script>
-{% endblock %}
+        <!-- Testimonial Section -->
+        <section id="testimonial" class="py-20 px-6">
+            <div class="container mx-auto max-w-3xl text-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                    class="mx-auto mb-6 text-gray-600">
+                    <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.75-2-2-2H4c-1.25 0-2 .75-2 2v6c0 7 4 8 7 8z"></path>
+                    <path d="M14 21c3 0 7-1 7-8V5c0-1.25-.75-2-2-2h-4c-1.25 0-2 .75-2 2v6c0 7 4 8 7 8z"></path>
+                </svg>
+                <blockquote class="text-2xl md:text-3xl font-medium leading-snug text-gray-100 mb-6">
+                    "It's basically your own private version of Pocket, Goodreads, and a movie watchlist rolled into one.
+                    I built it so everyone can keep track of all the stuff they want to check out later in one spot."
+                </blockquote>
+                <cite class="not-italic">
+                    <span class="font-bold text-lg text-white">Aman K.</span><br>
+                    <span class="text-gray-400">Founder, LaterList</span>
+                </cite>
+            </div>
+        </section>
+
+        <!-- Final CTA -->
+        <section class="text-center py-20 px-6 bg-gray-900">
+            <div class="container mx-auto">
+                <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight mb-4">
+                    Ready to declutter your digital life?
+                </h2>
+                <p class="text-lg text-gray-400 max-w-xl mx-auto mb-8">
+                    Start building your private sanctuary today. It's free to get started.
+                </p>
+                <a href="{{ url_for('index') if 'user_id' in session else url_for('register') }}"
+                    class="bg-gradient-to-r from-sky-500 to-indigo-500 hover:from-sky-600 hover:to-indigo-600 text-white font-bold px-8 py-4 rounded-lg text-lg transition-all duration-300 cta-button">
+                    Sign Up - It's Free
+                </a>
+            </div>
+        </section>
+        {% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 border-t border-gray-800">
+        <div class="container mx-auto px-6 py-8 text-center text-gray-500">
+            <p>&copy; 2025 LaterList. All Rights Reserved. Your private space on the web.</p>
+            <div class="mt-4 space-x-6">
+                <a href="#" class="hover:text-gray-300">About</a>
+                <a href="#" class="hover:text-gray-300">Privacy Policy</a>
+                <a href="#" class="hover:text-gray-300">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+</body>
+
+</html>
