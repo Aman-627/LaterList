@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, session, url_for, flash, jsonify
-import mysql.connector
-from mysql.connector import Error
+import psycopg2
+import psycopg2.extras
 from werkzeug.security import generate_password_hash, check_password_hash
 import requests
 import random
@@ -14,14 +14,6 @@ load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'a_very_secret_and_random_fallback_key_for_dev_only')
-
-# --- MySQL Database Configuration ---
-DB_CONFIG = {
-    'host': os.getenv('DB_HOST', 'localhost'),
-    'database': os.getenv('DB_DATABASE', 'media_hub'),
-    'user': os.getenv('DB_USER', 'root'),
-    'password': os.getenv('DB_PASSWORD', ''),
-}
 
 # --- API Configurations ---
 GROQ_API_KEY = os.getenv('GROQ_API_KEY')
@@ -38,12 +30,13 @@ if GROQ_API_KEY:
 
 
 def get_db_connection():
-    """Establishes a connection to the MySQL database."""
+    """Establishes a connection to the PostgreSQL database using the connection URL."""
     try:
-        conn = mysql.connector.connect(**DB_CONFIG)
+        # Neon provides a single URL that has all the connection info
+        conn = psycopg2.connect(os.getenv('DATABASE_URL'))
         return conn
-    except Error as e:
-        print(f"Error connecting to MySQL: {e}")
+    except psycopg2.OperationalError as e:
+        print(f"Error connecting to PostgreSQL: {e}")
         return None
 
 def get_ai_generated_link(title, category):
@@ -53,7 +46,6 @@ def get_ai_generated_link(title, category):
     if category == 'songs':
         return f"https://www.google.com/search?q={encoded_title}+song"
     elif category == 'books':
-        # This is a Google service, which aligns with the request.
         return f"https://www.google.com/search?q={encoded_title}+book"
     elif category == 'movies':
         return f"https://www.google.com/search?q={encoded_title}+movie"
@@ -82,16 +74,15 @@ def index():
         return render_template('index.html', data={}, username=session.get('username'))
     
     try:
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         for section in VALID_SECTIONS:
             cursor.execute(f"SELECT id, title, link FROM {section} WHERE user_id = %s ORDER BY created_at DESC", (user_id,))
             user_data[section] = cursor.fetchall()
-    except Error as e:
+    except psycopg2.Error as e:
         flash(f"Error fetching data: {e}", "error")
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
             
     return render_template('index.html', data=user_data, username=session.get('username'))
 
@@ -107,24 +98,22 @@ def api_add_item():
     if not all([section, title]) or section not in VALID_SECTIONS:
         return jsonify({'status': 'error', 'message': 'Title and a valid Category are required.'}), 400
         
-    # Always generate a Google search link, ignoring any user-submitted link.
     link = get_ai_generated_link(title, section)
 
     conn = get_db_connection()
     if not conn: return jsonify({'status': 'error', 'message': 'Database connection failed.'}), 500
 
     try:
-        cursor = conn.cursor(dictionary=True)
-        query = f"INSERT INTO {section} (user_id, title, link) VALUES (%s, %s, %s)"
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        query = f"INSERT INTO {section} (user_id, title, link) VALUES (%s, %s, %s) RETURNING id"
         cursor.execute(query, (session['user_id'], title, link))
-        new_id = cursor.lastrowid
+        new_id = cursor.fetchone()['id']
         conn.commit()
-    except Error as e:
+    except psycopg2.Error as e:
         return jsonify({'status': 'error', 'message': f'Database error: {e}'}), 500
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
             
     return jsonify({
         'status': 'success', 
@@ -151,12 +140,11 @@ def api_delete_item(section, item_id):
         
         if cursor.rowcount == 0:
             return jsonify({'status': 'error', 'message': 'Item not found or permission denied.'}), 404
-    except Error as e:
+    except psycopg2.Error as e:
         return jsonify({'status': 'error', 'message': f'Database error: {e}'}), 500
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
 
     return jsonify({'status': 'success', 'message': 'Item deleted.'})
 
@@ -168,21 +156,21 @@ def api_get_recommendation(category):
     if category not in ['movies', 'songs', 'books']:
         return jsonify({'status': 'error', 'message': 'Invalid recommendation category.'}), 400
     if not groq_client:
-        return jsonify({'status': 'error', 'message': f"Recommendation engine is not configured."}), 500
+        return jsonify({'status': 'error', 'message': "Recommendation engine is not configured."}), 500
     
     conn = get_db_connection()
     if not conn: return jsonify({'status': 'error', 'message': 'Database connection failed.'}), 500
 
+    items = []
     try:
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute(f"SELECT title FROM {category} WHERE user_id = %s", (session['user_id'],))
         items = cursor.fetchall()
-    except Error as e:
+    except psycopg2.Error as e:
         return jsonify({'status': 'error', 'message': f'Database error: {e}'}), 500
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
     
     if not items:
         return jsonify({'status': 'error', 'message': f"Add some {category} to get a recommendation!"}), 400
@@ -209,7 +197,7 @@ def api_get_recommendation(category):
     
     if category == 'songs':
         prompt += f"The user wants songs by or very similar to the artist: '{artist_preference}'. " if artist_preference else "The user has not specified a particular artist. "
-        prompt += f"Recommend 5 songs. Do not recommend any from the user's existing list. Each object in the 'recommendations' array should have 'song_name' and 'artist' keys."
+        prompt += "Recommend 5 songs. Do not recommend any from the user's existing list. Each object in the 'recommendations' array should have 'song_name' and 'artist' keys."
     else:
         item_type = 'movie' if category == 'movies' else 'book'
         creator_key = 'director' if category == 'movies' else 'author'
@@ -292,7 +280,7 @@ def admin_view():
         
     all_data = {}
     try:
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         for section in VALID_SECTIONS:
             query = f"""
                 SELECT i.id, i.title, i.link, u.username 
@@ -302,12 +290,11 @@ def admin_view():
             """
             cursor.execute(query)
             all_data[section] = cursor.fetchall()
-    except Error as e:
+    except psycopg2.Error as e:
         flash(f"Error fetching admin data: {e}", "error")
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
             
     return render_template('admin.html', data=all_data)
 
@@ -331,12 +318,11 @@ def admin_delete_item(section, item_id):
             flash("Item deleted successfully.", "success")
         else:
             flash("Item not found.", "warning")
-    except Error as e:
+    except psycopg2.Error as e:
         flash(f"Error deleting item: {e}", "error")
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
             
     return redirect(url_for('admin_view'))
 
@@ -351,7 +337,7 @@ def login():
             return render_template('login.html')
         
         try:
-            cursor = conn.cursor(dictionary=True)
+            cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
             cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
             user = cursor.fetchone()
             
@@ -361,12 +347,11 @@ def login():
                 return redirect(url_for('index'))
             else:
                 flash('Incorrect username or password, please try again.', 'error')
-        except Error as e:
+        except psycopg2.Error as e:
             flash(f"An error occurred: {e}", "error")
         finally:
-            if conn.is_connected():
-                cursor.close()
-                conn.close()
+            cursor.close()
+            conn.close()
 
     return render_template('login.html')
 
@@ -385,25 +370,28 @@ def register():
             return render_template('register.html', username=username)
 
         try:
-            cursor = conn.cursor(dictionary=True)
+            cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
             cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
             if cursor.fetchone():
                 flash("Username already exists. Please choose another.", "warning")
                 return render_template('register.html', username=username)
             
             hashed_password = generate_password_hash(password)
-            cursor.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, hashed_password))
+            cursor.execute(
+                "INSERT INTO users (username, password) VALUES (%s, %s) RETURNING id",
+                (username, hashed_password)
+            )
+            new_user = cursor.fetchone()
             conn.commit()
             
-            session['user_id'], session['username'] = cursor.lastrowid, username
+            session['user_id'], session['username'] = new_user['id'], username
             flash("Registration successful! Welcome.", "success")
             return redirect(url_for('index'))
-        except Error as e:
+        except psycopg2.Error as e:
             flash(f"An error occurred during registration: {e}", "error")
         finally:
-            if conn.is_connected():
-                cursor.close()
-                conn.close()
+            cursor.close()
+            conn.close()
 
     return render_template('register.html')
 
