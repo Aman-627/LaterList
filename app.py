@@ -402,6 +402,8 @@ def logout():
     flash("You have been logged out.", "success")
     return redirect(url_for('landing'))
 
+
+
 if __name__ == "__main__":
     from os import environ
     port = int(environ.get("PORT", 5000))
