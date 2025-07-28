@@ -1,5 +1,5 @@
-Flask
-mysql-connector-python
+flask
+psycopg2-binary
 werkzeug
 requests
 python-dotenv
