@@ -8,6 +8,9 @@ import os
 from dotenv import load_dotenv
 import json
 from groq import Groq
+from datetime import datetime, timedelta
+import hashlib
+import hmac
 
 # Load environment variables from .env file
 load_dotenv()
@@ -17,6 +20,7 @@ app.secret_key = os.getenv('FLASK_SECRET_KEY', 'a_very_secret_and_random_fallbac
 
 # --- API Configurations ---
 GROQ_API_KEY = os.getenv('GROQ_API_KEY')
+CRON_JOB_SECRET = os.getenv('CRON_JOB_SECRET', 'your_super_secret_cron_key_change_this')
 VALID_SECTIONS = ['movies', 'songs', 'bookmarks', 'books']
 
 # --- API Clients ---
@@ -38,6 +42,192 @@ def get_db_connection():
     except psycopg2.OperationalError as e:
         print(f"Error connecting to PostgreSQL: {e}")
         return None
+
+def verify_cron_job_auth(request):
+    """Verify that the cron job request is authentic."""
+    # Method 1: Check for secret key in headers
+    auth_header = request.headers.get('X-Cron-Secret')
+    if auth_header == CRON_JOB_SECRET:
+        return True
+    
+    # Method 2: Check for secret key in query params (fallback)
+    secret_param = request.args.get('secret')
+    if secret_param == CRON_JOB_SECRET:
+        return True
+    
+    return False
+
+def log_cron_job_execution(task_name, status, message=""):
+    """Log cron job execution to database (optional)."""
+    conn = get_db_connection()
+    if not conn:
+        return False
+    
+    try:
+        cursor = conn.cursor()
+        # You can create a cron_logs table to track executions
+        cursor.execute("""
+            INSERT INTO cron_logs (task_name, status, message, executed_at) 
+            VALUES (%s, %s, %s, %s)
+        """, (task_name, status, message, datetime.now()))
+        conn.commit()
+        return True
+    except psycopg2.Error as e:
+        print(f"Error logging cron job: {e}")
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+
+def cleanup_old_data():
+    """Example cleanup task - remove items older than X days if needed."""
+    conn = get_db_connection()
+    if not conn:
+        return False, "Database connection failed"
+    
+    try:
+        cursor = conn.cursor()
+        # Example: Clean up any logs older than 30 days
+        cutoff_date = datetime.now() - timedelta(days=30)
+        
+        # You can add cleanup logic here based on your needs
+        # For example, if you had a logs table:
+        # cursor.execute("DELETE FROM cron_logs WHERE executed_at < %s", (cutoff_date,))
+        
+        conn.commit()
+        return True, "Cleanup completed successfully"
+    except psycopg2.Error as e:
+        return False, f"Cleanup failed: {e}"
+    finally:
+        cursor.close()
+        conn.close()
+
+def get_system_stats():
+    """Get system statistics for monitoring."""
+    conn = get_db_connection()
+    if not conn:
+        return None
+    
+    try:
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        stats = {}
+        
+        # Get user count
+        cursor.execute("SELECT COUNT(*) as user_count FROM users")
+        stats['total_users'] = cursor.fetchone()['user_count']
+        
+        # Get item counts for each section
+        for section in VALID_SECTIONS:
+            cursor.execute(f"SELECT COUNT(*) as count FROM {section}")
+            stats[f'total_{section}'] = cursor.fetchone()['count']
+        
+        # Get recent activity (items added in last 24 hours)
+        yesterday = datetime.now() - timedelta(hours=24)
+        for section in VALID_SECTIONS:
+            cursor.execute(f"SELECT COUNT(*) as count FROM {section} WHERE created_at > %s", (yesterday,))
+            stats[f'recent_{section}'] = cursor.fetchone()['count']
+        
+        return stats
+    except psycopg2.Error as e:
+        print(f"Error getting stats: {e}")
+        return None
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/cron-job', methods=['GET', 'POST'])
+def cron_job_handler():
+    """
+    Main cron job endpoint that can handle different tasks.
+    
+    Usage:
+    - GET /cron-job?task=health_check&secret=YOUR_SECRET
+    - POST /cron-job with X-Cron-Secret header and JSON payload
+    """
+    
+    # Verify authentication
+    if not verify_cron_job_auth(request):
+        return jsonify({
+            'status': 'error',
+            'message': 'Unauthorized access'
+        }), 401
+    
+    # Get task type
+    task = request.args.get('task', 'health_check')
+    
+    try:
+        if task == 'health_check':
+            # Simple health check
+            conn = get_db_connection()
+            if conn:
+                conn.close()
+                stats = get_system_stats()
+                log_cron_job_execution('health_check', 'success', 'Health check passed')
+                return jsonify({
+                    'status': 'success',
+                    'message': 'System is healthy',
+                    'timestamp': datetime.now().isoformat(),
+                    'stats': stats
+                })
+            else:
+                log_cron_job_execution('health_check', 'failed', 'Database connection failed')
+                return jsonify({
+                    'status': 'error',
+                    'message': 'Database connection failed'
+                }), 500
+        
+        elif task == 'cleanup':
+            # Run cleanup tasks
+            success, message = cleanup_old_data()
+            status = 'success' if success else 'failed'
+            log_cron_job_execution('cleanup', status, message)
+            
+            return jsonify({
+                'status': 'success' if success else 'error',
+                'message': message,
+                'timestamp': datetime.now().isoformat()
+            })
+        
+        elif task == 'stats':
+            # Generate and return system statistics
+            stats = get_system_stats()
+            if stats:
+                log_cron_job_execution('stats', 'success', 'Stats generated')
+                return jsonify({
+                    'status': 'success',
+                    'message': 'Statistics generated',
+                    'timestamp': datetime.now().isoformat(),
+                    'data': stats
+                })
+            else:
+                log_cron_job_execution('stats', 'failed', 'Failed to generate stats')
+                return jsonify({
+                    'status': 'error',
+                    'message': 'Failed to generate statistics'
+                }), 500
+        
+        elif task == 'backup_trigger':
+            # Trigger backup process (you can implement actual backup logic)
+            log_cron_job_execution('backup_trigger', 'success', 'Backup triggered')
+            return jsonify({
+                'status': 'success',
+                'message': 'Backup process triggered',
+                'timestamp': datetime.now().isoformat()
+            })
+        
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': f'Unknown task: {task}',
+                'available_tasks': ['health_check', 'cleanup', 'stats', 'backup_trigger']
+            }), 400
+    
+    except Exception as e:
+        log_cron_job_execution(task, 'failed', str(e))
+        return jsonify({
+            'status': 'error',
+            'message': f'Task execution failed: {str(e)}'
+        }), 500
 
 def get_ai_generated_link(title, category):
     """Generates a Google search link for a given title and category."""
