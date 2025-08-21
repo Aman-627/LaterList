@@ -247,6 +247,9 @@ def get_ai_generated_link(title, category):
 @app.route("/")
 def landing():
     """Renders the landing page."""
+    if 'user_id' in session:
+        # If yes, redirect them to their home page
+        return redirect(url_for('index'))
     return render_template("landing.html")
 
 @app.route('/home')
@@ -437,7 +440,20 @@ def generate_ideas():
     if not user_prompt:
         return jsonify({'error': 'No prompt provided.'}), 400
     
-    full_prompt = f"You are a media suggestion assistant. Based on the user's mood or request, suggest 3 media items (movie, book, or song). Respond with a single, raw JSON object with a single key 'suggestions' which contains an array of 3 items. Each item must have 'title', 'category', and 'reason' keys. User request: \"{user_prompt}\""
+    # --- SOLUTION: Add a list of phrases to inject randomness ---
+    creative_phrases = [
+        "Give me some fresh and unique ideas.",
+        "Surprise me with your suggestions.",
+        "Suggest something unexpected.",
+        "I'm looking for hidden gems.",
+        "What would you recommend for this mood?"
+    ]
+    random_phrase = random.choice(creative_phrases)
+    # --- END OF SOLUTION ---
+    
+    # --- SOLUTION: Update the prompt to include the random phrase ---
+    full_prompt = f"You are a media suggestion assistant. Based on the user's mood or request, suggest 3 media items (movie, book, or song). {random_phrase} Respond with a single, raw JSON object with a single key 'suggestions' which contains an array of 3 items. Each item must have 'title', 'category', and 'reason' keys. User request: \"{user_prompt}\""
+    # --- END OF SOLUTION ---
     
     try:
         chat_completion = groq_client.chat.completions.create(
@@ -446,7 +462,7 @@ def generate_ideas():
                 {"role": "user", "content": full_prompt}
             ],
             model="llama3-8b-8192",
-            temperature=0.7,
+            temperature=0.7, # This temperature setting is good for creativity
             response_format={"type": "json_object"},
         )
         
