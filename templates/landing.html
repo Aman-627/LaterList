@@ -30,8 +30,11 @@
                 LaterList is the private, beautiful home for all your saved media. 
                 We will help you find hidden gems in your own collection, making it easy to decide what to enjoy next. <span class="font-semibold text-gray-200">Just your stuff.</span>
             </p>
-<a href="{{ url_for('register') }}" class="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold px-8 py-4 rounded-lg text-lg transition-all duration-300 cta-button">Create Your Own Sanctuary</a>
-        
+{% if 'user_id' in session %}
+    <a href="{{ url_for('index') }}" class="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold px-8 py-4 rounded-lg text-lg transition-all duration-300 cta-button scroll-animate" style="transition-delay: 400ms;">Go to Your Dashboard</a>
+{% else %}
+    <a href="{{ url_for('register') }}" class="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold px-8 py-4 rounded-lg text-lg transition-all duration-300 cta-button scroll-animate" style="transition-delay: 400ms;">Get Started for Free</a>
+{% endif %}
         </div>
     </section>
 
