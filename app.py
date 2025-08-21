@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 import hashlib
 import hmac
 
-# Load environment variables from .env file
+
 load_dotenv()
 
 app = Flask(__name__)
@@ -36,7 +36,7 @@ if GROQ_API_KEY:
 def get_db_connection():
     """Establishes a connection to the PostgreSQL database using the connection URL."""
     try:
-        # Neon provides a single URL that has all the connection info
+        
         conn = psycopg2.connect(os.getenv('DATABASE_URL'))
         return conn
     except psycopg2.OperationalError as e:
@@ -45,12 +45,12 @@ def get_db_connection():
 
 def verify_cron_job_auth(request):
     """Verify that the cron job request is authentic."""
-    # Method 1: Check for secret key in headers
+   
     auth_header = request.headers.get('X-Cron-Secret')
     if auth_header == CRON_JOB_SECRET:
         return True
     
-    # Method 2: Check for secret key in query params (fallback)
+
     secret_param = request.args.get('secret')
     if secret_param == CRON_JOB_SECRET:
         return True
@@ -65,7 +65,7 @@ def log_cron_job_execution(task_name, status, message=""):
     
     try:
         cursor = conn.cursor()
-        # You can create a cron_logs table to track executions
+
         cursor.execute("""
             INSERT INTO cron_logs (task_name, status, message, executed_at) 
             VALUES (%s, %s, %s, %s)
@@ -87,12 +87,9 @@ def cleanup_old_data():
     
     try:
         cursor = conn.cursor()
-        # Example: Clean up any logs older than 30 days
+
         cutoff_date = datetime.now() - timedelta(days=30)
-        
-        # You can add cleanup logic here based on your needs
-        # For example, if you had a logs table:
-        # cursor.execute("DELETE FROM cron_logs WHERE executed_at < %s", (cutoff_date,))
+
         
         conn.commit()
         return True, "Cleanup completed successfully"
@@ -247,9 +244,6 @@ def get_ai_generated_link(title, category):
 @app.route("/")
 def landing():
     """Renders the landing page."""
-    if 'user_id' in session:
-        # If yes, redirect them to their home page
-        return redirect(url_for('index'))
     return render_template("landing.html")
 
 @app.route('/home')
@@ -440,7 +434,7 @@ def generate_ideas():
     if not user_prompt:
         return jsonify({'error': 'No prompt provided.'}), 400
     
-    # --- SOLUTION: Add a list of phrases to inject randomness ---
+
     creative_phrases = [
         "Give me some fresh and unique ideas.",
         "Surprise me with your suggestions.",
@@ -449,11 +443,11 @@ def generate_ideas():
         "What would you recommend for this mood?"
     ]
     random_phrase = random.choice(creative_phrases)
-    # --- END OF SOLUTION ---
+
     
-    # --- SOLUTION: Update the prompt to include the random phrase ---
+
     full_prompt = f"You are a media suggestion assistant. Based on the user's mood or request, suggest 3 media items (movie, book, or song). {random_phrase} Respond with a single, raw JSON object with a single key 'suggestions' which contains an array of 3 items. Each item must have 'title', 'category', and 'reason' keys. User request: \"{user_prompt}\""
-    # --- END OF SOLUTION ---
+
     
     try:
         chat_completion = groq_client.chat.completions.create(
@@ -462,7 +456,8 @@ def generate_ideas():
                 {"role": "user", "content": full_prompt}
             ],
             model="llama3-8b-8192",
-            temperature=0.7, # This temperature setting is good for creativity
+            temperature=0.7, 
+
             response_format={"type": "json_object"},
         )
         
@@ -471,7 +466,7 @@ def generate_ideas():
     except Exception as e:
         print(f"Error during Groq idea generation: {e}")
         return jsonify({'error': 'Could not get suggestions from the AI.'}), 500
-
+    
 @app.route('/admin')
 def admin_view():
     """Displays the admin dashboard with all items from all users."""
@@ -535,6 +530,8 @@ def admin_delete_item(section, item_id):
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     """Handles user login."""
+    if 'user_id' in session:
+        return redirect(url_for('index'))
     if request.method == 'POST':
         username, password = request.form['username'], request.form['password']
         conn = get_db_connection()
@@ -564,6 +561,8 @@ def login():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     """Handles user registration."""
+    if 'user_id' in session:
+        return redirect(url_for('index'))
     if request.method == 'POST':
         username, password = request.form['username'].strip(), request.form['password'].strip()
         if not username or not password:
