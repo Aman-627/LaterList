@@ -600,6 +600,55 @@ def register():
 
     return render_template('register.html')
 
+@app.route('/change_password', methods=['GET', 'POST'])
+def change_password():
+    """Handles changing the user's password."""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        current_password = request.form['current_password']
+        new_password = request.form['new_password']
+        confirm_password = request.form['confirm_password']
+
+        if not all([current_password, new_password, confirm_password]):
+            flash('All fields are required.', 'warning')
+            return redirect(url_for('change_password'))
+
+        if new_password != confirm_password:
+            flash('New passwords do not match.', 'error')
+            return redirect(url_for('change_password'))
+
+        user_id = session['user_id']
+        conn = get_db_connection()
+        if not conn:
+            flash('Database connection error.', 'error')
+            return redirect(url_for('change_password'))
+
+        try:
+            cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            cursor.execute("SELECT password FROM users WHERE id = %s", (user_id,))
+            user = cursor.fetchone()
+
+            if not user or not check_password_hash(user['password'], current_password):
+                flash('Incorrect current password.', 'error')
+                return redirect(url_for('change_password'))
+
+            hashed_password = generate_password_hash(new_password)
+            cursor.execute("UPDATE users SET password = %s WHERE id = %s", (hashed_password, user_id))
+            conn.commit()
+            flash('Your password has been updated successfully.', 'success')
+            return redirect(url_for('index'))
+
+        except psycopg2.Error as e:
+            flash(f'An error occurred: {e}', 'error')
+        finally:
+            cursor.close()
+            conn.close()
+
+    return render_template('change_password.html')
+
+
 @app.route('/logout')
 def logout():
     """Logs the user out."""

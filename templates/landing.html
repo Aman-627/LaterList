@@ -4,17 +4,72 @@
 
 {% block head_extra %}
 <style>
-    .feature-card { background-color: rgba(31, 41, 55, 0.5); border: 1px solid rgba(55, 65, 81, 0.7); transition: transform 0.3s ease, box-shadow 0.3s ease; }
-    .feature-card:hover { transform: translateY(-8px); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); }
-    .feature-card .icon-container { transition: transform 0.3s ease; }
-    .feature-card:hover .icon-container { transform: scale(1.15); }
-    #ai-demo-form input { background-color: rgba(31, 41, 55, 0.7); border: 1px solid #374151; }
-    #ai-demo-form input:focus { border-color: #10b981; box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.4); outline: none; }
-    .suggestion-card { background: rgba(31, 41, 55, 0.6); border: 1px solid #374151; transition: transform 0.3s ease, box-shadow 0.3s ease; }
-    .suggestion-card:hover { transform: translateY(-5px); box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
-    .suggestion-card .category-badge { background-color: #10b981; color: #ffffff; }
-    .loader { width: 48px; height: 48px; border: 5px solid #FFF; border-bottom-color: #10b981; border-radius: 50%; display: inline-block; box-sizing: border-box; animation: rotation 1s linear infinite; }
-    @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .feature-card {
+        background-color: rgba(31, 41, 55, 0.5);
+        border: 1px solid rgba(55, 65, 81, 0.7);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .feature-card .icon-container {
+        transition: transform 0.3s ease;
+    }
+
+    .feature-card:hover .icon-container {
+        transform: scale(1.15);
+    }
+
+    #ai-demo-form input {
+        background-color: rgba(31, 41, 55, 0.7);
+        border: 1px solid #374151;
+    }
+
+    #ai-demo-form input:focus {
+        border-color: #10b981;
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.4);
+        outline: none;
+    }
+
+    .suggestion-card {
+        background: rgba(31, 41, 55, 0.6);
+        border: 1px solid #374151;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .suggestion-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .suggestion-card .category-badge {
+        background-color: #10b981;
+        color: #ffffff;
+    }
+
+    .loader {
+        width: 48px;
+        height: 48px;
+        border: 5px solid #FFF;
+        border-bottom-color: #10b981;
+        border-radius: 50%;
+        display: inline-block;
+        box-sizing: border-box;
+        animation: rotation 1s linear infinite;
+    }
+
+    @keyframes rotation {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
 </style>
 {% endblock %}
 
@@ -22,19 +77,26 @@
 <main>
     <section class="text-center py-20 md:py-32 px-6 relative overflow-hidden">
         <div class="container mx-auto relative z-10">
-            <h2 class="text-4xl md:text-6xl font-extrabold tracking-tighter leading-tight mb-4 scroll-animate" style="transition-delay: 100ms;">
+            <h2 class="text-4xl md:text-6xl font-extrabold tracking-tighter leading-tight mb-4 scroll-animate"
+                style="transition-delay: 100ms;">
                 Rediscover Your Curiosity.
             </h2>
-            
-            <p class="text-lg md:text-xl text-gray-400 max-w-3xl mx-auto mb-8 scroll-animate" style="transition-delay: 250ms;">
-                LaterList is the private, beautiful home for all your saved media. 
-                We will help you find hidden gems in your own collection, making it easy to decide what to enjoy next. <span class="font-semibold text-gray-200">Just your stuff.</span>
+
+            <p class="text-lg md:text-xl text-gray-400 max-w-3xl mx-auto mb-8 scroll-animate"
+                style="transition-delay: 250ms;">
+                LaterList is the private, beautiful home for all your saved media.
+                We will help you find hidden gems in your own collection, making it easy to decide what to enjoy next.
+                <span class="font-semibold text-gray-200">Just your stuff.</span>
             </p>
-{% if 'user_id' in session %}
-    <a href="{{ url_for('index') }}" class="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold px-8 py-4 rounded-lg text-lg transition-all duration-300 cta-button scroll-animate" style="transition-delay: 400ms;">Go to Your Dashboard</a>
-{% else %}
-    <a href="{{ url_for('register') }}" class="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold px-8 py-4 rounded-lg text-lg transition-all duration-300 cta-button scroll-animate" style="transition-delay: 400ms;">Get Started for Free</a>
-{% endif %}
+            {% if 'user_id' in session %}
+            <a href="{{ url_for('index') }}"
+                class="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold px-8 py-4 rounded-lg text-lg transition-all duration-300 cta-button scroll-animate"
+                style="transition-delay: 400ms;">Go to Your Dashboard</a>
+            {% else %}
+            <a href="{{ url_for('register') }}"
+                class="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold px-8 py-4 rounded-lg text-lg transition-all duration-300 cta-button scroll-animate"
+                style="transition-delay: 400ms;">Create Your Own Sanctuary</a>
+            {% endif %}
         </div>
     </section>
 
@@ -48,24 +110,42 @@
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <div class="feature-card p-8 rounded-xl scroll-animate" style="transition-delay: 100ms;">
                     <div class="icon-container bg-gray-700 h-12 w-12 rounded-lg flex items-center justify-center mb-6">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-400"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="text-emerald-400">
+                            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                        </svg>
                     </div>
                     <h4 class="text-xl font-bold mb-3">Save Anything, From Anywhere</h4>
-                    <p class="text-gray-400">Articles, blog posts, books, movies, TV shows. If you can link to it, you can save it.</p>
+                    <p class="text-gray-400">Articles, blog posts, books, movies, TV shows. If you can link to it, you
+                        can save it.</p>
                 </div>
                 <div class="feature-card p-8 rounded-xl scroll-animate" style="transition-delay: 200ms;">
                     <div class="icon-container bg-gray-700 h-12 w-12 rounded-lg flex items-center justify-center mb-6">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-400"><path d="M9.5 2.1c.2-.5.8-.8 1.4-.8h1.2c.6 0 1.2.3 1.4.8l.9 2.1c.2.5.7.8 1.2.8h2.3c.6 0 1.1.4 1.2.9l.5 2.5c.1.5-.2 1-.7 1.2l-2 .9c-.4.2-.7.6-.5 1.1l1.1 2.4c.2.5 0 1.1-.5 1.3l-2.1.9c-.5.2-1 .1-1.3-.2l-1.8-1.8c-.4-.4-1-.4-1.4 0l-1.8 1.8c-.3.3-.8.4-1.3.2l-2.1-.9c-.5-.2-.7-.8-.5-1.3l1.1-2.4c.2-.5-.1-1-.5-1.1l-2-.9c-.5-.2-.8-.7-.7-1.2l.5-2.5c.1-.5.6-.9 1.2-.9h2.3c.5 0 1-.3 1.2-.8l.9-2.1z"></path></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="text-emerald-400">
+                            <path
+                                d="M9.5 2.1c.2-.5.8-.8 1.4-.8h1.2c.6 0 1.2.3 1.4.8l.9 2.1c.2.5.7.8 1.2.8h2.3c.6 0 1.1.4 1.2.9l.5 2.5c.1.5-.2 1-.7 1.2l-2 .9c-.4.2-.7.6-.5 1.1l1.1 2.4c.2.5 0 1.1-.5 1.3l-2.1.9c-.5.2-1 .1-1.3-.2l-1.8-1.8c-.4-.4-1-.4-1.4 0l-1.8 1.8c-.3.3-.8.4-1.3.2l-2.1-.9c-.5-.2-.7-.8-.5-1.3l1.1-2.4c.2-.5-.1-1-.5-1.1l-2-.9c-.5-.2-.8-.7-.7-1.2l.5-2.5c.1-.5.6-.9 1.2-.9h2.3c.5 0 1-.3 1.2-.8l.9-2.1z">
+                            </path>
+                        </svg>
                     </div>
                     <h4 class="text-xl font-bold mb-3">Truly Personal Recommendations</h4>
-                    <p class="text-gray-400">We suggest new content that feels like you would have picked it yourself—a perfect reflection of what you love.</p>
+                    <p class="text-gray-400">We suggest new content that feels like you would have picked it yourself—a
+                        perfect reflection of what you love.</p>
                 </div>
                 <div class="feature-card p-8 rounded-xl scroll-animate" style="transition-delay: 300ms;">
                     <div class="icon-container bg-gray-700 h-12 w-12 rounded-lg flex items-center justify-center mb-6">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-400"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="text-emerald-400">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
                     </div>
                     <h4 class="text-xl font-bold mb-3">A Fort Knox for Your Data</h4>
-                    <p class="text-gray-400">Your list is yours alone. We don't track you across the web, and we'll never sell your data.</p>
+                    <p class="text-gray-400">Your list is yours alone. We don't track you across the web, and we'll
+                        never sell your data.</p>
                 </div>
             </div>
         </div>
@@ -75,18 +155,21 @@
         <div class="container mx-auto max-w-4xl">
             <div class="text-center mb-12 scroll-animate">
                 <h3 class="text-3xl md:text-4xl font-bold mb-2">Try LaterList AI ✨</h3>
-                <p class="text-gray-400 max-w-2xl mx-auto">Tell us what you're in the mood for, and we will generate some ideas for you.</p>
+                <p class="text-gray-400 max-w-2xl mx-auto">Tell us what you're in the mood for, and we will generate
+                    some ideas for you.</p>
             </div>
             <div class="scroll-animate" style="transition-delay: 150ms;">
                 <form id="ai-demo-form" class="flex flex-col sm:flex-row gap-4 max-w-xl mx-auto mb-8">
-                    <input type="text" id="mood-input" placeholder="e.g., a funny movie from the 90s" class="w-full px-4 py-3 rounded-lg text-gray-200 focus:ring-0">
-                    <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-6 py-3 rounded-lg cta-button flex-shrink-0">
+                    <input type="text" id="mood-input" placeholder="e.g., a funny movie from the 90s"
+                        class="w-full px-4 py-3 rounded-lg text-gray-200 focus:ring-0">
+                    <button type="submit"
+                        class="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-6 py-3 rounded-lg cta-button flex-shrink-0">
                         Generate Ideas
                     </button>
                 </form>
             </div>
             <div id="ai-results" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-             <div id="ai-loader" class="text-center py-8 hidden">
+            <div id="ai-loader" class="text-center py-8 hidden">
                 <div class="loader mx-auto"></div>
                 <p class="text-gray-400 mt-4">thinkinggg...</p>
             </div>
@@ -97,34 +180,68 @@
         <div class="container mx-auto grid md:grid-cols-2 gap-12 items-center">
             <div class="text-center md:text-left scroll-animate">
                 <h3 class="text-3xl md:text-4xl font-bold mb-4">You're in control, Always.</h3>
-                <p class="text-gray-400 mb-4 text-lg">In an internet built on surveillance capitalism, LaterList is your refuge. We believe you should be able to explore your interests without being a data point.</p>
+                <p class="text-gray-400 mb-4 text-lg">In an internet built on surveillance capitalism, LaterList is your
+                    refuge. We believe you should be able to explore your interests without being a data point.</p>
                 <ul class="space-y-3 text-left">
-                    <li class="flex items-start"><svg class="w-6 h-6 text-green-400 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span><strong class="text-gray-200">No Ad-Targeting:</strong> Your saved items are never used to target you with ads.</span></li>
-                    <li class="flex items-start"><svg class="w-6 h-6 text-green-400 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span><strong class="text-gray-200">No Data Selling:</strong> We will never sell or share your personal data with third parties. Period.</span></li>
-                    <li class="flex items-start"><svg class="w-6 h-6 text-green-400 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span><strong class="text-gray-200">Minimal Access, Maximum Respect:</strong> Admin access exists solely to keep your experience smooth—never to mine your data.
+                    <li class="flex items-start"><svg class="w-6 h-6 text-green-400 mr-3 flex-shrink-0 mt-1" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7">
+                            </path>
+                        </svg><span><strong class="text-gray-200">No Ad-Targeting:</strong> Your saved items are never
+                            used to target you with ads.</span></li>
+                    <li class="flex items-start"><svg class="w-6 h-6 text-green-400 mr-3 flex-shrink-0 mt-1" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7">
+                            </path>
+                        </svg><span><strong class="text-gray-200">No Data Selling:</strong> We will never sell or share
+                            your personal data with third parties. Period.</span></li>
+                    <li class="flex items-start"><svg class="w-6 h-6 text-green-400 mr-3 flex-shrink-0 mt-1" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7">
+                            </path>
+                        </svg><span><strong class="text-gray-200">Minimal Access, Maximum Respect:</strong> Admin access
+                            exists solely to keep your experience smooth—never to mine your data.
 
-</span></li>
+                        </span></li>
                 </ul>
             </div>
             <div class="flex justify-center scroll-animate" style="transition-delay: 200ms;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="mx-auto text-emerald-400"><title>A secure shield representing data privacy</title><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="rgba(31, 41, 55, 0.7)"></path><rect x="9" y="11" width="6" height="5" rx="1" fill="#111827" stroke="#10b981" stroke-width="1.5"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="#14b8a6" stroke-width="1.5"></path></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+                    class="mx-auto text-emerald-400">
+                    <title>A secure shield representing data privacy</title>
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="rgba(31, 41, 55, 0.7)"></path>
+                    <rect x="9" y="11" width="6" height="5" rx="1" fill="#111827" stroke="#10b981" stroke-width="1.5">
+                    </rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="#14b8a6" stroke-width="1.5"></path>
+                </svg>
             </div>
         </div>
     </section>
 
     <section id="testimonial" class="py-20 px-6">
         <div class="container mx-auto max-w-3xl text-center scroll-animate">
-            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-6 text-gray-600"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.75-2-2-2H4c-1.25 0-2 .75-2 2v6c0 7 4 8 7 8z"></path><path d="M14 21c3 0 7-1 7-8V5c0-1.25-.75-2-2-2h-4c-1.25 0-2 .75-2 2v6c0 7 4 8 7 8z"></path></svg>
-            <blockquote class="text-2xl md:text-3xl font-medium leading-snug text-gray-100 mb-6">" I got tired of searching through chats, bookmarks, and screenshots to find stuff. LaterList fixes that. "</blockquote>
-            <cite class="not-italic"><span class="font-bold text-lg text-white" style="font-size: 2rem;">Aman K.</span><br><span class="text-gray-400">Founder, LaterList</span></cite>
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="mx-auto mb-6 text-gray-600">
+                <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.75-2-2-2H4c-1.25 0-2 .75-2 2v6c0 7 4 8 7 8z"></path>
+                <path d="M14 21c3 0 7-1 7-8V5c0-1.25-.75-2-2-2h-4c-1.25 0-2 .75-2 2v6c0 7 4 8 7 8z"></path>
+            </svg>
+            <blockquote class="text-2xl md:text-3xl font-medium leading-snug text-gray-100 mb-6">" I got tired of
+                searching through chats, bookmarks, and screenshots to find stuff. LaterList fixes that. "</blockquote>
+            <cite class="not-italic"><span class="font-bold text-lg text-white" style="font-size: 2rem;">Aman
+                    K.</span><br><span class="text-gray-400">Founder, LaterList</span></cite>
         </div>
     </section>
 
     <section class="text-center py-20 px-6 bg-gray-900/50">
         <div class="container mx-auto scroll-animate">
-            <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight mb-4">Ready to declutter your digital life?</h2>
-            <p class="text-lg text-gray-400 max-w-xl mx-auto mb-8">                                                                  </p>
-            <a href="{{ url_for('register') }}" class="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold px-8 py-4 rounded-lg text-lg transition-all duration-300 cta-button">Sign Up - It's Free</a>
+            {% if 'user_id' not in session %}
+            <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight mb-4">Ready to declutter your digital life?
+            </h2>
+            <a href="{{ url_for('register') }}"
+                class="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold px-8 py-4 rounded-lg text-lg transition-all duration-300 cta-button">Get Started for Free</a>
+            {% endif %}
         </div>
     </section>
 </main>
@@ -132,64 +249,64 @@
 
 {% block scripts %}
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-    const demoForm = document.getElementById('ai-demo-form');
-    const moodInput = document.getElementById('mood-input');
-    const resultsContainer = document.getElementById('ai-results');
-    const loader = document.getElementById('ai-loader');
+    document.addEventListener("DOMContentLoaded", () => {
+        const demoForm = document.getElementById('ai-demo-form');
+        const moodInput = document.getElementById('mood-input');
+        const resultsContainer = document.getElementById('ai-results');
+        const loader = document.getElementById('ai-loader');
 
-    if (demoForm) {
-        demoForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const prompt = moodInput.value.trim();
-            if (!prompt) return;
+        if (demoForm) {
+            demoForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const prompt = moodInput.value.trim();
+                if (!prompt) return;
 
-            resultsContainer.innerHTML = '';
-            loader.classList.remove('hidden');
+                resultsContainer.innerHTML = '';
+                loader.classList.remove('hidden');
 
-            try {
-                const response = await fetch("{{ url_for('generate_ideas') }}", {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt: prompt })
-                });
+                try {
+                    const response = await fetch("{{ url_for('generate_ideas') }}", {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prompt: prompt })
+                    });
 
-                const result = await response.json();
+                    const result = await response.json();
 
-                if (!response.ok) {
-                    throw new Error(result.error || `API error: ${response.statusText}`);
-                }
-                
-                if (Array.isArray(result) && result.length > 0) {
-                    resultsContainer.innerHTML = '';
-                    result.forEach(item => {
-                        const card = document.createElement('div');
-                        card.className = 'suggestion-card p-6 rounded-xl text-left';
-                        card.innerHTML = `
+                    if (!response.ok) {
+                        throw new Error(result.error || `API error: ${response.statusText}`);
+                    }
+
+                    if (Array.isArray(result) && result.length > 0) {
+                        resultsContainer.innerHTML = '';
+                        result.forEach(item => {
+                            const card = document.createElement('div');
+                            card.className = 'suggestion-card p-6 rounded-xl text-left';
+                            card.innerHTML = `
                             <div class="flex justify-between items-start mb-2">
                                 <h4 class="text-lg font-bold text-white pr-2">${item.title}</h4>
                                 <span class="category-badge text-xs font-semibold px-2 py-1 rounded-full whitespace-nowrap">${item.category}</span>
                             </div>
                             <p class="text-gray-400 text-sm">${item.reason}</p>
                         `;
-                        resultsContainer.appendChild(card);
-                    });
-                } else {
-                    displayError("Sorry, the AI couldn't generate a response. Please try a different prompt.");
+                            resultsContainer.appendChild(card);
+                        });
+                    } else {
+                        displayError("Sorry, the AI couldn't generate a response. Please try a different prompt.");
+                    }
+
+                } catch (error) {
+                    console.error("Error in AI Demo:", error);
+                    displayError(error.message || "An error occurred while fetching suggestions.");
+                } finally {
+                    loader.classList.add('hidden');
                 }
+            });
+        }
 
-            } catch (error) {
-                console.error("Error in AI Demo:", error);
-                displayError(error.message || "An error occurred while fetching suggestions.");
-            } finally {
-                loader.classList.add('hidden');
-            }
-        });
-    }
-
-    function displayError(message) {
-         resultsContainer.innerHTML = `<p class="text-center text-red-400 col-span-full">${message}</p>`;
-    }
-});
+        function displayError(message) {
+            resultsContainer.innerHTML = `<p class="text-center text-red-400 col-span-full">${message}</p>`;
+        }
+    });
 </script>
 {% endblock %}

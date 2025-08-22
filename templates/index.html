@@ -304,7 +304,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    function renderRecommendations(recs) {
+function renderRecommendations(recs) {
         const container = document.getElementById('recommendation-container');
         let itemsHtml = recs.results.map(item => `
             <div class="flex justify-between items-center text-left bg-gray-800/50 p-2 rounded-md">
@@ -343,7 +343,9 @@ document.addEventListener('DOMContentLoaded', function () {
             <div class="bg-gray-900/50 p-4 rounded-lg mb-4 text-center space-y-3">
                 <p class="text-sm text-gray-400">Based on <strong class="font-semibold text-gray-300">${recs.based_on}</strong>, you might like:</p>
                 <div class="space-y-2">${itemsHtml}</div>
-                <button data-category="${recs.section}" class="rec-btn w-full mt-4 text-sm text-gray-400 hover:text-red-400 transition-colors">Get new recommendations</button>
+                <button data-category="${recs.section}" class="rec-btn w-full mt-4 text-sm bg-gradient-to-r from-gray-700/50 to-gray-800/50 hover:from-gray-700/80 hover:to-gray-800/80 text-white font-semibold py-2 px-4 rounded-md cta-button">
+                    Get New Recommendations 
+                </button>
                 ${artistFeedbackForm}
             </div>
         `;

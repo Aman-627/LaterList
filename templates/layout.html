@@ -60,6 +60,19 @@
             opacity: 1;
             transform: translateY(0);
         }
+        
+        /* --- START: Added styles for social icons --- */
+        .social-icon { 
+            transition: transform 0.2s ease-in-out; 
+        }
+        .social-icon:hover { 
+            transform: scale(1.25); /* Pop-out effect */
+        }
+        .instagram-hover-color:hover {
+            color: #E4405F; /* Instagram Pink */
+        }
+        /* --- END: Added styles for social icons --- */
+
     </style>
     {% block head_extra %}{% endblock %}
 </head>
@@ -73,7 +86,22 @@
                 {% if session['username'] == 'DuniyaKaPapa' %}
                 <a href="{{ url_for('admin_view') }}" class="text-gray-300 hover:text-emerald-400 font-semibold">Admin</a>
                 {% endif %}
-                <a href="{{ url_for('logout') }}" class="bg-red-600 hover:bg-red-500 text-white font-semibold py-2 px-5 rounded-lg cta-button">Logout</a>
+                
+                <div class="relative ml-3" id="profile-dropdown-container">
+                    <div>
+                        <button type="button" class="flex text-sm bg-gray-800 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-emerald-500" id="profile-menu-button" aria-expanded="false" aria-haspopup="true">
+                            <span class="sr-only">Open user menu</span>
+                            <div class="h-9 w-9 rounded-full bg-gray-700 flex items-center justify-center text-emerald-400 font-bold uppercase">
+                                {{ session.username[0] }}
+                            </div>
+                        </button>
+                    </div>
+                    <div id="profile-menu" class="hidden origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none z-60" role="menu" aria-orientation="vertical" aria-labelledby="profile-menu-button" tabindex="-1">
+                        <a href="{{ url_for('change_password') }}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white" role="menuitem" tabindex="-1">Change Password</a>
+                        <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white" role="menuitem" tabindex="-1">Logout</a>
+                    </div>
+                </div>
+
             </div>
             {% else %}
             <nav class="hidden md:flex items-center space-x-8">
@@ -90,18 +118,26 @@
     </header>
 
     <main class="flex-grow">
-        <div id="flash-container" class="fixed top-24 right-0 p-4 md:p-6 w-full max-w-sm z-50 space-y-3 overflow-hidden"></div>
+        <div id="flash-container" class="fixed top-32 right-0 p-4 md:p-6 w-full max-w-sm z-50 space-y-3 overflow-hidden"></div>
         {% block content %}{% endblock %}
     </main>
 
     <footer class="bg-gray-900/80 border-t border-gray-800 mt-auto">
         <div class="container mx-auto px-6 py-8 text-center text-gray-500">
             <p>© 2025 LaterList. All Rights Reserved.</p>
-            <a href="https://github.com/Aman-627" target="_blank" rel="noopener noreferrer" class="inline-block mt-4 text-gray-500 hover:text-white transition-colors" aria-label="GitHub Profile">
-                Find me  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="inline-block align-middle ml-1">
-                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.91 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-                </svg>
-            </a>
+            <div class="flex justify-center items-center space-x-6 mt-4">
+                <a href="https://github.com/Aman-627" target="_blank" rel="noopener noreferrer" class="social-icon text-gray-500 hover:text-white transition-colors" aria-label="GitHub Profile">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.91 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                </a>
+                <a href="#" target="_blank" rel="noopener noreferrer" class="social-icon text-gray-500 instagram-hover-color transition-colors" aria-label="Instagram Profile">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2zm-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.39 5.61 20 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6C20 5.61 18.39 4 16.4 4H7.6zm9.65 1.5a1.25 1.25 0 0 1 1.25 1.25A1.25 1.25 0 0 1 17.25 8 1.25 1.25 0 0 1 16 6.75a1.25 1.25 0 0 1 1.25-1.25zM12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5zm0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z"/>
+                    </svg>
+                </a>
+            </div>
+            <p class="mt-2">Find me</p>
         </div>
     </footer>
 
@@ -109,19 +145,34 @@
     <script src="https://unpkg.com/tippy.js@6"></script>
 
     <script>
+        // ##### START: UPDATED FLASH MESSAGE SCRIPT #####
         function showFlashMessage(message, category = 'success') {
             const container = document.getElementById('flash-container');
             if (!container) return;
-            const colors = { success: 'bg-emerald-500', error: 'bg-red-500', warning: 'bg-yellow-500' };
-            const color = colors && colors.hasOwnProperty(category) ? colors.category : 'bg-sky-500';
-            const flashDiv = document.createElement('div');
-            flashDiv.className = `flash-message ${color} text-white font-bold rounded-lg p-4 shadow-lg`;
-            flashDiv.innerHTML = message;
-            container.appendChild(flashDiv);
-            setTimeout(() => { flashDiv.classList.add('fade-out'); }, 3000);
-            setTimeout(() => { flashDiv.remove(); }, 3500);
-        }
+            
+            // Changed from background colors to text colors
+            const textColors = { 
+                success: 'text-emerald-400', 
+                error: 'text-red-400', 
+                warning: 'text-yellow-400' 
+            };
+            const colorClass = textColors[category] || 'text-sky-400';
 
+            const flashDiv = document.createElement('div');
+            
+            // Removed background, shadow, and rounding. Added text size and drop shadow.
+            flashDiv.className = `flash-message ${colorClass} text-lg font-bold p-4 drop-shadow-lg`;
+            
+            // Using textContent is safer as it prevents HTML injection
+            flashDiv.textContent = message;
+            container.appendChild(flashDiv);
+            
+            setTimeout(() => { flashDiv.classList.add('fade-out'); }, 2000 );
+            setTimeout(() => { flashDiv.remove(); }, 2500);
+        }
+        // ##### END: UPDATED FLASH MESSAGE SCRIPT #####
+
+        // Your original script for scroll animations
         function initializeScrollAnimations() {
             const animatedElements = document.querySelectorAll('.scroll-animate');
             if (animatedElements.length === 0) return;
@@ -135,6 +186,28 @@
             }, { threshold: 0.1 });
             animatedElements.forEach(el => observer.observe(el));
         }
+        
+        // The standard script for the profile dropdown
+        function initializeProfileDropdown() {
+            const container = document.getElementById('profile-dropdown-container');
+            if (!container) return;
+            
+            const button = document.getElementById('profile-menu-button');
+            const menu = document.getElementById('profile-menu');
+
+            button.addEventListener('click', (event) => {
+                event.stopPropagation();
+                menu.classList.toggle('hidden');
+                button.setAttribute('aria-expanded', !menu.classList.contains('hidden'));
+            });
+
+            window.addEventListener('click', (event) => {
+                if (!menu.classList.contains('hidden') && !container.contains(event.target)) {
+                    menu.classList.add('hidden');
+                    button.setAttribute('aria-expanded', 'false');
+                }
+            });
+        }
 
         document.addEventListener("DOMContentLoaded", () => {
             {% with messages = get_flashed_messages(with_categories = true) %}
@@ -146,6 +219,7 @@
             {% endwith %}
 
             initializeScrollAnimations();
+            initializeProfileDropdown();
         });
     </script>
     {% block scripts %}{% endblock %}
