@@ -456,7 +456,7 @@ def generate_ideas():
                 {"role": "system", "content": "You are a media suggestion assistant. You only respond with a single JSON object containing 'suggestions' array."},
                 {"role": "user", "content": full_prompt}
             ],
-            model="Llama 3 8B 8k",
+            model="gemma2-9b-it",
             temperature=0.7, 
 
             response_format={"type": "json_object"},
