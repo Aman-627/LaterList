@@ -1,3 +1,4 @@
+
 from flask import Flask, render_template, request, redirect, session, url_for, flash, jsonify
 import psycopg2
 import psycopg2.extras
@@ -455,7 +456,7 @@ def generate_ideas():
                 {"role": "system", "content": "You are a media suggestion assistant. You only respond with a single JSON object containing 'suggestions' array."},
                 {"role": "user", "content": full_prompt}
             ],
-            model="llama3-8b-8192",
+            model="Llama 3 8B 8k",
             temperature=0.7, 
 
             response_format={"type": "json_object"},
