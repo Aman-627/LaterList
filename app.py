@@ -656,7 +656,10 @@ def logout():
     session.clear()
     flash("You have been logged out.", "success")
     return redirect(url_for('landing'))
+@app.route('/health')
+def health_check():
 
+    return "OK", 200
 
 
 if __name__ == "__main__":
