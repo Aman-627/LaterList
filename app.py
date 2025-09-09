@@ -397,7 +397,7 @@ def api_get_recommendation(category):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": prompt}
             ],
-            model="Llama 3 8B 8k",
+            model="gemma2-9b-it",
             temperature=0.7,
             response_format={"type": "json_object"},
         )
