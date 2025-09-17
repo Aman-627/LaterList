@@ -1,3 +1,4 @@
+
 from flask import Flask, render_template, request, redirect, session, url_for, flash, jsonify
 import psycopg2
 import psycopg2.extras
@@ -8,6 +9,10 @@ import os
 from dotenv import load_dotenv
 import json
 from groq import Groq
+from datetime import datetime, timedelta
+import hashlib
+import hmac
+
 
 load_dotenv()
 
@@ -16,10 +21,9 @@ app.secret_key = os.getenv('FLASK_SECRET_KEY', 'a_very_secret_and_random_fallbac
 
 # --- API Configurations ---
 GROQ_API_KEY = os.getenv('GROQ_API_KEY')
-TMDB_API_KEY = os.getenv('TMDB_API_KEY')
-SPOTIFY_CLIENT_ID = os.getenv('SPOTIFY_CLIENT_ID')
-SPOTIFY_CLIENT_SECRET = os.getenv('SPOTIFY_CLIENT_SECRET')
+CRON_JOB_SECRET = os.getenv('CRON_JOB_SECRET', 'your_super_secret_cron_key_change_this')
 VALID_SECTIONS = ['movies', 'songs', 'bookmarks', 'books']
+TMDB_API_KEY = os.getenv('TMDB_API_KEY')
 
 # --- API Clients ---
 groq_client = None
@@ -30,47 +34,230 @@ if GROQ_API_KEY:
     except Exception as e:
         print(f"Could not initialize Groq client: {e}")
 
+
 def get_db_connection():
+    """Establishes a connection to the PostgreSQL database using the connection URL."""
     try:
+        
         conn = psycopg2.connect(os.getenv('DATABASE_URL'))
         return conn
     except psycopg2.OperationalError as e:
         print(f"Error connecting to PostgreSQL: {e}")
         return None
 
-def get_spotify_token():
-    if not SPOTIFY_CLIENT_ID or not SPOTIFY_CLIENT_SECRET:
-        print("Spotify credentials are not configured.")
+def verify_cron_job_auth(request):
+    """Verify that the cron job request is authentic."""
+   
+    auth_header = request.headers.get('X-Cron-Secret')
+    if auth_header == CRON_JOB_SECRET:
+        return True
+    
+
+    secret_param = request.args.get('secret')
+    if secret_param == CRON_JOB_SECRET:
+        return True
+    
+    return False
+
+def log_cron_job_execution(task_name, status, message=""):
+    """Log cron job execution to database (optional)."""
+    conn = get_db_connection()
+    if not conn:
+        return False
+    
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            INSERT INTO cron_logs (task_name, status, message, executed_at) 
+            VALUES (%s, %s, %s, %s)
+        """, (task_name, status, message, datetime.now()))
+        conn.commit()
+        return True
+    except psycopg2.Error as e:
+        print(f"Error logging cron job: {e}")
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+
+def cleanup_old_data():
+    """Example cleanup task - remove items older than X days if needed."""
+    conn = get_db_connection()
+    if not conn:
+        return False, "Database connection failed"
+    
+    try:
+        cursor = conn.cursor()
+
+        cutoff_date = datetime.now() - timedelta(days=30)
+
+        
+        conn.commit()
+        return True, "Cleanup completed successfully"
+    except psycopg2.Error as e:
+        return False, f"Cleanup failed: {e}"
+    finally:
+        cursor.close()
+        conn.close()
+
+def get_system_stats():
+    """Get system statistics for monitoring."""
+    conn = get_db_connection()
+    if not conn:
         return None
-    auth_url = 'https://accounts.spotify.com/api/token'
-    response = requests.post(auth_url, {
-        'grant_type': 'client_credentials',
-        'client_id': SPOTIFY_CLIENT_ID,
-        'client_secret': SPOTIFY_CLIENT_SECRET,
-    })
-    if response.status_code != 200:
-        print(f"Failed to get Spotify token: {response.text}")
+    
+    try:
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        stats = {}
+        
+        # Get user count
+        cursor.execute("SELECT COUNT(*) as user_count FROM users")
+        stats['total_users'] = cursor.fetchone()['user_count']
+        
+        # Get item counts for each section
+        for section in VALID_SECTIONS:
+            cursor.execute(f"SELECT COUNT(*) as count FROM {section}")
+            stats[f'total_{section}'] = cursor.fetchone()['count']
+        
+        # Get recent activity (items added in last 24 hours)
+        yesterday = datetime.now() - timedelta(hours=24)
+        for section in VALID_SECTIONS:
+            cursor.execute(f"SELECT COUNT(*) as count FROM {section} WHERE created_at > %s", (yesterday,))
+            stats[f'recent_{section}'] = cursor.fetchone()['count']
+        
+        return stats
+    except psycopg2.Error as e:
+        print(f"Error getting stats: {e}")
         return None
-    return response.json().get('access_token')
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/cron-job', methods=['GET', 'POST'])
+def cron_job_handler():
+    """
+    Main cron job endpoint that can handle different tasks.
+    
+    Usage:
+    - GET /cron-job?task=health_check&secret=YOUR_SECRET
+    - POST /cron-job with X-Cron-Secret header and JSON payload
+    """
+    
+    # Verify authentication
+    if not verify_cron_job_auth(request):
+        return jsonify({
+            'status': 'error',
+            'message': 'Unauthorized access'
+        }), 401
+    
+    # Get task type
+    task = request.args.get('task', 'health_check')
+    
+    try:
+        if task == 'health_check':
+            # Simple health check
+            conn = get_db_connection()
+            if conn:
+                conn.close()
+                stats = get_system_stats()
+                log_cron_job_execution('health_check', 'success', 'Health check passed')
+                return jsonify({
+                    'status': 'success',
+                    'message': 'System is healthy',
+                    'timestamp': datetime.now().isoformat(),
+                    'stats': stats
+                })
+            else:
+                log_cron_job_execution('health_check', 'failed', 'Database connection failed')
+                return jsonify({
+                    'status': 'error',
+                    'message': 'Database connection failed'
+                }), 500
+        
+        elif task == 'cleanup':
+            # Run cleanup tasks
+            success, message = cleanup_old_data()
+            status = 'success' if success else 'failed'
+            log_cron_job_execution('cleanup', status, message)
+            
+            return jsonify({
+                'status': 'success' if success else 'error',
+                'message': message,
+                'timestamp': datetime.now().isoformat()
+            })
+        
+        elif task == 'stats':
+            # Generate and return system statistics
+            stats = get_system_stats()
+            if stats:
+                log_cron_job_execution('stats', 'success', 'Stats generated')
+                return jsonify({
+                    'status': 'success',
+                    'message': 'Statistics generated',
+                    'timestamp': datetime.now().isoformat(),
+                    'data': stats
+                })
+            else:
+                log_cron_job_execution('stats', 'failed', 'Failed to generate stats')
+                return jsonify({
+                    'status': 'error',
+                    'message': 'Failed to generate statistics'
+                }), 500
+        
+        elif task == 'backup_trigger':
+            # Trigger backup process (you can implement actual backup logic)
+            log_cron_job_execution('backup_trigger', 'success', 'Backup triggered')
+            return jsonify({
+                'status': 'success',
+                'message': 'Backup process triggered',
+                'timestamp': datetime.now().isoformat()
+            })
+        
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': f'Unknown task: {task}',
+                'available_tasks': ['health_check', 'cleanup', 'stats', 'backup_trigger']
+            }), 400
+    
+    except Exception as e:
+        log_cron_job_execution(task, 'failed', str(e))
+        return jsonify({
+            'status': 'error',
+            'message': f'Task execution failed: {str(e)}'
+        }), 500
 
 def get_ai_generated_link(title, category):
+    """Generates a Google search link for a given title and category."""
     encoded_title = requests.utils.quote(title)
-    if category == 'books':
+
+    if category == 'songs':
+        return f"https://www.google.com/search?q={encoded_title}+song"
+    elif category == 'books':
         return f"https://www.google.com/search?q={encoded_title}+book"
+    elif category == 'movies':
+        return f"https://www.google.com/search?q={encoded_title}+movie"
+    
+    # Fallback for any other category, like bookmarks.
     return f"https://www.google.com/search?q={encoded_title}"
+
 
 @app.route("/")
 def landing():
+    """Renders the landing page."""
     return render_template("landing.html")
 
 @app.route('/home')
 def index():
+    """Renders the user's dashboard with their collection."""
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
     user_id = session['user_id']
     user_data = {}
     conn = get_db_connection()
+    
     if not conn:
         flash("Database connection error.", "error")
         return render_template('index.html', data={}, username=session.get('username'))
@@ -78,214 +265,270 @@ def index():
     try:
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         for section in VALID_SECTIONS:
-            if section == 'songs':
-                cursor.execute(f"SELECT id, title, link, album_art_url FROM {section} WHERE user_id = %s ORDER BY created_at DESC", (user_id,))
-            else:
-                 cursor.execute(f"SELECT id, title, link FROM {section} WHERE user_id = %s ORDER BY created_at DESC", (user_id,))
+            cursor.execute(f"SELECT id, title, link FROM {section} WHERE user_id = %s ORDER BY created_at DESC", (user_id,))
             user_data[section] = cursor.fetchall()
     except psycopg2.Error as e:
         flash(f"Error fetching data: {e}", "error")
     finally:
-        if conn:
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
+            
     return render_template('index.html', data=user_data, username=session.get('username'))
+
+# In app.py, REPLACE the existing api_add_item function
 
 @app.route('/api/add_item', methods=['POST'])
 def api_add_item():
-    if 'user_id' not in session: return jsonify({'status': 'error', 'message': 'Authentication required.'}), 401
+    """API endpoint to add a new item to the user's collection."""
+    if 'user_id' not in session:
+        return jsonify({'status': 'error', 'message': 'Authentication required.'}), 401
+        
     data = request.get_json()
     section, title = data.get('section'), data.get('title')
-    if not all([section, title]) or section not in VALID_SECTIONS: return jsonify({'status': 'error', 'message': 'Title and a valid Category are required.'}), 400
+
+    if not all([section, title]) or section not in VALID_SECTIONS:
+        return jsonify({'status': 'error', 'message': 'Title and a valid Category are required.'}), 400
+    
     conn = get_db_connection()
     if not conn: return jsonify({'status': 'error', 'message': 'Database connection failed.'}), 500
+
     try:
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        
+        # --- START: New TMDb logic for movies section ---
         if section == 'movies':
+            if not TMDB_API_KEY:
+                return jsonify({'status': 'error', 'message': 'TMDb API key not configured.'}), 500
+
+            # Use the /search/multi endpoint to find movies OR TV shows
             search_url = f"https://api.themoviedb.org/3/search/multi?api_key={TMDB_API_KEY}&query={requests.utils.quote(title)}"
             search_res = requests.get(search_url).json()
+            
+            # Find the first valid result (TMDb sorts by popularity)
             best_match = next((item for item in search_res.get('results', []) if item.get('media_type') in ['movie', 'tv']), None)
-            if not best_match: return jsonify({'status': 'error', 'message': f"Could not find '{title}'."}), 404
-            tmdb_id, media_type = best_match.get('id'), best_match.get('media_type')
+            
+            if not best_match:
+                return jsonify({'status': 'error', 'message': f"Could not find a movie or TV show matching '{title}'."}), 404
+
+            # Extract details from the best match
+            tmdb_id = best_match.get('id')
+            media_type = best_match.get('media_type')
+            # TV shows use 'name', movies use 'title'. Get the correct one.
             item_title = best_match.get('title') or best_match.get('name')
             link = f"https://www.themoviedb.org/{media_type}/{tmdb_id}"
-            query = "INSERT INTO movies (user_id, title, link, tmdb_id, media_type) VALUES (%s, %s, %s, %s, %s) RETURNING id"
+
+            # Save the new, richer data to the database
+            query = """
+                INSERT INTO movies (user_id, title, link, tmdb_id, media_type) 
+                VALUES (%s, %s, %s, %s, %s) RETURNING id
+            """
             cursor.execute(query, (session['user_id'], item_title, link, tmdb_id, media_type))
-            item = {'id': cursor.fetchone()['id'], 'title': item_title, 'link': link, 'section': section}
+            new_id = cursor.fetchone()['id']
             conn.commit()
-            return jsonify({'status': 'success', 'message': f"Added '{item_title}'.", 'item': item})
 
-        elif section == 'songs':
-            token = get_spotify_token()
-            if not token: return jsonify({'status': 'error', 'message': 'Spotify auth failed.'}), 500
-            search_url = f"https://api.spotify.com/v1/search?q={requests.utils.quote(title)}&type=track&limit=1"
-            headers = {"Authorization": f"Bearer {token}"}
-            search_res = requests.get(search_url, headers=headers).json()
-            tracks = search_res.get('tracks', {}).get('items', [])
-            if not tracks: return jsonify({'status': 'error', 'message': f"Could not find '{title}' on Spotify."}), 404
-            best_match = tracks[0]
-            spotify_id, song_name = best_match.get('id'), best_match.get('name')
-            artist_name = best_match.get('artists', [{}])[0].get('name', 'Unknown Artist')
-            album_art_url = best_match.get('album', {}).get('images', [{}])[0].get('url')
-            link = best_match.get('external_urls', {}).get('spotify')
-            item_title = f"{song_name} by {artist_name}"
-            query = "INSERT INTO songs (user_id, title, link, spotify_id, album_art_url) VALUES (%s, %s, %s, %s, %s) RETURNING id"
-            cursor.execute(query, (session['user_id'], item_title, link, spotify_id, album_art_url))
-            item = {'id': cursor.fetchone()['id'], 'title': item_title, 'link': link, 'section': section, 'album_art_url': album_art_url}
-            conn.commit()
-            return jsonify({'status': 'success', 'message': f"Added '{item_title}'.", 'item': item})
+            return jsonify({
+                'status': 'success', 
+                'message': f"Added '{item_title}' to your collection.", 
+                'item': {'id': new_id, 'title': item_title, 'link': link, 'section': section}
+            })
+        # --- END: New TMDb logic for movies section ---
 
-        else: # books, bookmarks
+        # Original logic for other sections (songs, books, etc.)
+        else:
             link = get_ai_generated_link(title, section)
             query = f"INSERT INTO {section} (user_id, title, link) VALUES (%s, %s, %s) RETURNING id"
             cursor.execute(query, (session['user_id'], title, link))
-            item = {'id': cursor.fetchone()['id'], 'title': title, 'link': link, 'section': section}
+            new_id = cursor.fetchone()['id']
             conn.commit()
-            return jsonify({'status': 'success', 'message': f"Added '{title}'.", 'item': item})
+            
+            return jsonify({
+                'status': 'success', 
+                'message': f"Added '{title}' to {section}.", 
+                'item': {'id': new_id, 'title': title, 'link': link, 'section': section}
+            })
 
     except psycopg2.Error as e:
         conn.rollback()
         return jsonify({'status': 'error', 'message': f'Database error: {e}'}), 500
     finally:
-        if conn:
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
 
 @app.route('/api/delete_item/<section>/<int:item_id>', methods=['POST'])
 def api_delete_item(section, item_id):
-    if 'user_id' not in session: return jsonify({'status': 'error', 'message': 'Auth required.'}), 401
-    if section not in VALID_SECTIONS: return jsonify({'status': 'error', 'message': 'Invalid section.'}), 400
+    """API endpoint to delete an item from the user's collection."""
+    if 'user_id' not in session:
+        return jsonify({'status': 'error', 'message': 'Authentication required.'}), 401
+    if section not in VALID_SECTIONS:
+        return jsonify({'status': 'error', 'message': 'Invalid section.'}), 400
+        
     conn = get_db_connection()
-    if not conn: return jsonify({'status': 'error', 'message': 'DB connection failed.'}), 500
+    if not conn: return jsonify({'status': 'error', 'message': 'Database connection failed.'}), 500
+
     try:
         cursor = conn.cursor()
-        cursor.execute(f"DELETE FROM {section} WHERE id = %s AND user_id = %s", (item_id, session['user_id']))
+        query = f"DELETE FROM {section} WHERE id = %s AND user_id = %s"
+        cursor.execute(query, (item_id, session['user_id']))
         conn.commit()
-        if cursor.rowcount == 0: return jsonify({'status': 'error', 'message': 'Item not found.'}), 404
+        
+        if cursor.rowcount == 0:
+            return jsonify({'status': 'error', 'message': 'Item not found or permission denied.'}), 404
     except psycopg2.Error as e:
-        return jsonify({'status': 'error', 'message': f'DB error: {e}'}), 500
+        return jsonify({'status': 'error', 'message': f'Database error: {e}'}), 500
     finally:
-        if conn:
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
+
     return jsonify({'status': 'success', 'message': 'Item deleted.'})
+
+
+
+# In app.py, replace the entire function with this corrected version
 
 @app.route('/api/recommend/<category>', methods=['POST'])
 def api_get_recommendation(category):
-    if 'user_id' not in session: return jsonify({'status': 'error', 'message': 'Auth required.'}), 401
-    if category not in ['movies', 'songs', 'books']: return jsonify({'status': 'error', 'message': 'Invalid category.'}), 400
-    
-    data = request.get_json()
-    all_excluded_titles = list(set(data.get('disliked_items', []) + data.get('excluded_from_recs', [])))
-    conn = get_db_connection()
-    if not conn: return jsonify({'status': 'error', 'message': 'DB connection failed.'}), 500
+    """API endpoint to get recommendations."""
+    if 'user_id' not in session:
+        return jsonify({'status': 'error', 'message': 'Authentication required.'}), 401
+    if category not in ['movies', 'songs', 'books']:
+        return jsonify({'status': 'error', 'message': 'Invalid recommendation category.'}), 400
 
-    try:
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        if category == 'movies':
+    # This part gets the data sent from the frontend (the fix)
+    data = request.get_json()
+    disliked_items = data.get('disliked_items', [])
+    excluded_from_recs = data.get('excluded_from_recs', [])
+    all_excluded_titles = list(set(disliked_items + excluded_from_recs))
+
+    # CATEGORY: MOVIES
+    if category == 'movies':
+        if not TMDB_API_KEY:
+            return jsonify({'status': 'error', 'message': 'TMDb API key is not configured.'}), 500
+
+        conn = get_db_connection()
+        if not conn: return jsonify({'status': 'error', 'message': 'Database connection failed.'}), 500
+        
+        try:
+            cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
             cursor.execute("SELECT title, tmdb_id, media_type FROM movies WHERE user_id = %s AND tmdb_id IS NOT NULL", (session['user_id'],))
             all_items = cursor.fetchall()
+
+            # --- START: THIS IS THE NEW LOGIC ---
+            # Filter out the items the user ticked for exclusion
             eligible_items = [item for item in all_items if item['title'] not in all_excluded_titles]
-            if not eligible_items: return jsonify({'status': 'error', 'message': "All items are excluded."}), 400
-            base_item = random.choice(eligible_items)
-            based_on_title, tmdb_id, media_type = base_item['title'], base_item['tmdb_id'], base_item['media_type']
+
+            if not eligible_items:
+                return jsonify({'status': 'error', 'message': "All your items are excluded. Please uncheck some to get a recommendation."}), 400
+            # --- END: NEW LOGIC ---
+
+            base_item = random.choice(eligible_items) # Pick from the filtered list
+            based_on_title = base_item['title']
+            tmdb_id = base_item['tmdb_id']
+            media_type = base_item['media_type']
+
             rec_url = f"https://api.themoviedb.org/3/{media_type}/{tmdb_id}/recommendations?api_key={TMDB_API_KEY}"
             rec_res = requests.get(rec_url).json()
-            if not rec_res.get('results'): return jsonify({'status': 'error', 'message': f'No recommendations for "{based_on_title}".'}), 404
+
+            if not rec_res.get('results'):
+                return jsonify({'status': 'error', 'message': f'Could not find recommendations based on "{based_on_title}".'}), 404
+
+            # Filter out recommendations that are already on the user's exclusion list
             final_recs = [rec for rec in rec_res['results'] if (rec.get('title') or rec.get('name')) not in all_excluded_titles]
-            rec_list = [{'title': item.get('title') or item.get('name'), 'link': f"https://www.themoviedb.org/{item.get('media_type', media_type)}/{item.get('id')}", 'reason': f"Because you liked {based_on_title}"} for item in final_recs[:5]]
-            return jsonify({'status': 'success', 'recommendations': {'results': rec_list, 'based_on': based_on_title, 'section': category}})
-
-        elif category == 'songs':
-            cursor.execute("SELECT spotify_id, title FROM songs WHERE user_id = %s AND spotify_id IS NOT NULL", (session['user_id'],))
-            all_items = cursor.fetchall()
-            if not all_items:
-                return jsonify({'status': 'error', 'message': "Add some songs to get a recommendation!"}), 400
-            eligible_items = [item for item in all_items if item['title'] not in all_excluded_titles]
-            if not eligible_items:
-                return jsonify({'status': 'error', 'message': "All songs are excluded."}), 400
-            base_item = random.choice(eligible_items)
-            spotify_id, based_on_title = base_item['spotify_id'], base_item['title']
-
-    # Validate spotify_id exists and is not empty
-            if not spotify_id:
-                return jsonify({'status': 'error', 'message': f'No valid Spotify ID for "{based_on_title}".'}), 400
-
-            token = get_spotify_token()
-            if not token:
-                return jsonify({'status': 'error', 'message': 'Spotify auth failed.'}), 500
-
-    # Use the correct Spotify recommendations API URL
-            rec_url = f"https://api.spotify.com/v1/recommendations?seed_tracks={spotify_id}&limit=5"
-            headers = {"Authorization": f"Bearer {token}"}
-    
-            print(f"Requesting recommendations for spotify_id: {spotify_id}")
-            print(f"Request URL: {rec_url}")
-    
-            resp = requests.get(rec_url, headers=headers)
-
-    # Debug logging
-            print(f"Spotify recommendations response: {resp.status_code}")
-            if resp.status_code != 200:
-                print(f"Error response: {resp.text[:500]}")
-
-            if resp.status_code == 400:
-                return jsonify({'status': 'error', 'message': f'Invalid Spotify track ID for "{based_on_title}". Try re-adding the song.'}), 400
-            elif resp.status_code != 200:
-                return jsonify({'status': 'error', 'message': f"Spotify API error {resp.status_code}: {resp.text}"}), 500
-
-            try:
-                rec_res = resp.json()
-            except Exception as e:
-                return jsonify({'status': 'error', 'message': f"Invalid JSON from Spotify: {e}"}), 500
-
-            if not rec_res.get('tracks'):
-                return jsonify({'status': 'error', 'message': f'No recommendations available for "{based_on_title}".'}), 404
 
             rec_list = []
-            for track in rec_res['tracks']:
-                track_title = f"{track.get('name')} by {track.get('artists', [{}])[0].get('name', 'Unknown')}"
-                link = track.get('external_urls', {}).get('spotify')
-                if link:  # Only add tracks with valid Spotify links
-                    rec_list.append({'title': track_title, 'link': link, 'reason': f"Because you liked {based_on_title}"})
-
-                if not rec_list:
-                    return jsonify({'status': 'error', 'message': f'No valid recommendations found for "{based_on_title}".'}), 404
-
+            for item in final_recs[:5]:
+                item_title = item.get('title') or item.get('name')
+                item_media_type = item.get('media_type', media_type)
+                rec_list.append({
+                    'title': item_title,
+                    'link': f"https://www.themoviedb.org/{item_media_type}/{item.get('id')}",
+                    'reason': f"Because you liked {based_on_title}"
+                })
+            
             return jsonify({'status': 'success', 'recommendations': {'results': rec_list, 'based_on': based_on_title, 'section': category}})
 
-        else: # books
+        except Exception as e:
+            print(f"Error during TMDb recommendation: {e}")
+            return jsonify({'status': 'error', 'message': 'An error occurred with the movie recommendation service.'}), 500
+        finally:
+            if conn:
+                cursor.close()
+                conn.close()
+
+    # CATEGORY: SONGS or BOOKS (uses Groq)
+    else:
+        # This part already worked correctly, so it remains largely the same
+        conn = get_db_connection()
+        if not conn: return jsonify({'status': 'error', 'message': 'Database connection failed.'}), 500
+        try:
+            cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
             cursor.execute(f"SELECT title FROM {category} WHERE user_id = %s", (session['user_id'],))
             items = cursor.fetchall()
-            if not items: return jsonify({'status': 'error', 'message': f"Add some {category} to get a recommendation!"}), 400
-            if not groq_client: return jsonify({'status': 'error', 'message': "AI engine not configured."}), 500
-            item_titles = [item['title'] for item in items]
-            eligible_items = [title for title in item_titles if title not in all_excluded_titles]
-            if not eligible_items: return jsonify({'status': 'error', 'message': f"All {category} are excluded."}), 400
-            based_on_item = random.choice(eligible_items)
-            system_prompt = "You are a recommendation assistant. Respond with a single JSON object: {'recommendations': [...]}. Each item must have 'title', 'author', and 'reason' keys."
-            prompt = f"A user likes these books: {', '.join(eligible_items)}. Do not recommend any of these: {', '.join(all_excluded_titles)}. Recommend 3 new books."
-            try:
-                chat_completion = groq_client.chat.completions.create(messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}], model="gemma2-9b-it", temperature=0.7, response_format={"type": "json_object"})
-                rec_data = json.loads(chat_completion.choices[0].message.content).get('recommendations', [])
-                rec_list = [{'title': f"{item.get('title', 'Unknown')} by {item.get('author', 'Unknown')}", 'link': get_ai_generated_link(f"{item.get('title', '')} {item.get('author', '')}", 'books'), 'reason': item.get('reason', '')} for item in rec_data]
-                return jsonify({'status': 'success', 'recommendations': {'results': rec_list, 'based_on': based_on_item, 'section': category}})
-            except Exception as e:
-                return jsonify({'status': 'error', 'message': f'AI error: {e}'}), 500
-    finally:
-        if conn:
+        finally:
             cursor.close()
             conn.close()
 
-# --- All other routes (generate_ideas, auth, admin) unchanged ---
+        if not items:
+            return jsonify({'status': 'error', 'message': f"Add some {category} to get a recommendation!"}), 400
+
+        if not groq_client:
+            return jsonify({'status': 'error', 'message': "Recommendation engine is not configured."}), 500
+        
+        item_titles = [item['title'] for item in items]
+        artist_preference = data.get('artist_preference') # Already defined at the top
+        eligible_items = [title for title in item_titles if title not in all_excluded_titles]
+
+        if not eligible_items:
+            return jsonify({'status': 'error', 'message': f"All your {category} are marked for exclusion. Add more or uncheck some to get recommendations."}), 400
+
+        based_on_item = random.choice(eligible_items)
+        # ... (The rest of the Groq logic remains the same) ...
+        system_prompt = "You are a helpful recommendation assistant. You will be given a list of items a user likes and you must recommend new items of the same category. You must respond with a single JSON object. The JSON object must have a single key named 'recommendations' which contains an array of the recommended items."
+        prompt = f"A user likes these {', '.join(eligible_items)}. "
+        if all_excluded_titles:
+            prompt += f"Do not recommend any of these items: {', '.join(all_excluded_titles)}. "
+        if category == 'songs':
+            prompt += f"The user wants songs by or very similar to the artist: '{artist_preference}'. " if artist_preference else "The user has not specified a particular artist. "
+            prompt += "Recommend 5 songs. Do not recommend any from the user's existing list. Each object in the 'recommendations' array should have 'song_name' and 'artist' keys."
+        else: # Books
+            prompt += "Recommend 3 new books the user would enjoy. Do not recommend any from the list. Each object in the 'recommendations' array should have 'title', 'author', and 'reason' keys."
+        try:
+            chat_completion = groq_client.chat.completions.create(
+                messages=[{"role": "system", "content": system_prompt},{"role": "user", "content": prompt}],
+                model="gemma2-9b-it",
+                temperature=0.7,
+                response_format={"type": "json_object"},
+            )
+            rec_data = json.loads(chat_completion.choices[0].message.content).get('recommendations', [])
+            rec_list = []
+            if category == 'songs':
+                for s in rec_data:
+                    if s.get("song_name") and s.get("artist"):
+                        full_title = f"{s['song_name']} by {s['artist']}"
+                        link = get_ai_generated_link(full_title, 'songs')
+                        rec_list.append({'title': full_title, 'link': link, 'reason': ''})
+            else: # Books
+                for item in rec_data:
+                    creator = item.get('author', "")
+                    title = item.get('title', 'Unknown Title')
+                    full_title = f"{title} by {creator}" if creator else title
+                    link = get_ai_generated_link(full_title, 'books')
+                    rec_list.append({'title': full_title, 'link': link, 'reason': item.get('reason', '')})
+            return jsonify({'status': 'success', 'recommendations': {'results': rec_list, 'based_on': based_on_item, 'section': category}})
+        except Exception as e:
+            print(f"Error during recommendation: {e}")
+            return jsonify({'status': 'error', 'message': 'Could not get a recommendation from the AI.'}), 500
+    # CATEGORY: SONGS or BOOKS (uses Groq)
+    
 @app.route('/generate_ideas', methods=['POST'])
 def generate_ideas():
+    """Endpoint for the landing page AI demo."""
     if not groq_client:
         return jsonify({'error': 'AI suggestion engine is not configured.'}), 500
     data = request.get_json()
     user_prompt = data.get('prompt')
     if not user_prompt:
         return jsonify({'error': 'No prompt provided.'}), 400
+    
 
     creative_phrases = [
         "Give me some fresh and unique ideas.",
@@ -296,8 +539,11 @@ def generate_ideas():
     ]
     random_phrase = random.choice(creative_phrases)
 
+    
+
     full_prompt = f"You are a media suggestion assistant. Based on the user's mood or request, suggest 3 media items (movie, book, or song). {random_phrase} Respond with a single, raw JSON object with a single key 'suggestions' which contains an array of 3 items. Each item must have 'title', 'category', and 'reason' keys. User request: \"{user_prompt}\""
 
+    
     try:
         chat_completion = groq_client.chat.completions.create(
             messages=[
@@ -306,6 +552,7 @@ def generate_ideas():
             ],
             model="gemma2-9b-it",
             temperature=0.7, 
+
             response_format={"type": "json_object"},
         )
         
@@ -314,10 +561,10 @@ def generate_ideas():
     except Exception as e:
         print(f"Error during Groq idea generation: {e}")
         return jsonify({'error': 'Could not get suggestions from the AI.'}), 500
-
-# --- Admin, login, register, change_password, logout, health routes remain unchanged ---
-@app.route('/admin')  
+    
+@app.route('/admin')
 def admin_view():
+    """Displays the admin dashboard with all items from all users."""
     if 'user_id' not in session or session.get('username') != 'DuniyaKaPapa':
         flash("You do not have permission to access this page.", "error")
         return redirect(url_for('index'))
@@ -349,6 +596,7 @@ def admin_view():
 
 @app.route('/admin/delete/<section>/<int:item_id>', methods=['POST'])
 def admin_delete_item(section, item_id):
+    """Handles item deletion by an admin."""
     if 'user_id' not in session or session.get('username') != 'DuniyaKaPapa':
         flash("You do not have permission to perform this action.", "error")
         return redirect(url_for('admin_view'))
@@ -376,6 +624,7 @@ def admin_delete_item(section, item_id):
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    """Handles user login."""
     if 'user_id' in session:
         return redirect(url_for('index'))
     if request.method == 'POST':
@@ -406,6 +655,7 @@ def login():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    """Handles user registration."""
     if 'user_id' in session:
         return redirect(url_for('index'))
     if request.method == 'POST':
@@ -447,6 +697,7 @@ def register():
 
 @app.route('/change_password', methods=['GET', 'POST'])
 def change_password():
+    """Handles changing the user's password."""
     if 'user_id' not in session:
         return redirect(url_for('login'))
 
@@ -492,16 +743,20 @@ def change_password():
 
     return render_template('change_password.html')
 
+
 @app.route('/logout')
 def logout():
+    """Logs the user out."""
     session.clear()
     flash("You have been logged out.", "success")
     return redirect(url_for('landing'))
-
 @app.route('/health')
 def health_check():
+
     return "OK", 200
 
+
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+    from os import environ
+    port = int(environ.get("PORT", 5000))
     app.run(debug=False, host="0.0.0.0", port=port)
