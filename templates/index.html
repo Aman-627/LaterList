@@ -3,579 +3,333 @@
 
 {% block head_extra %}
 <style>
-    .feature-card {
-        background-color: rgba(31, 41, 55, 0.5);
-        border: 1px solid rgba(55, 65, 81, 0.7);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .ai-feature-card {
-        background: linear-gradient(145deg, rgba(31, 41, 55, 0.5), rgba(16, 185, 129, 0.1));
-    }
-
-    .form-input {
-        background-color: rgba(31, 41, 55, 0.7);
-        border: 1px solid #374151;
-    }
-
-    .form-input:focus {
-        border-color: #10b981;
-        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.4);
-        outline: none;
-    }
-
-    .item-enter {
-        animation: item-in 0.5s ease-out forwards;
-    }
-
-    @keyframes item-in {
-        from {
-            opacity: 0;
-            transform: translateY(10px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    /* Custom Checkbox Styling */
-    .custom-checkbox {
-        appearance: none;
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        width: 1.25rem; /* Equivalent to h-5 w-5 */
-        height: 1.25rem;
-        border: 2px solid #4B5563; /* Tailwind gray-600 */
-        border-radius: 0.25rem; /* Tailwind rounded */
-        background-color: #1F2937; /* Tailwind gray-800 */
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        transition: background-color 0.2s, border-color 0.2s;
-    }
-
-    .custom-checkbox:checked {
-        background-color: #059669; /* Tailwind emerald-600 */
-        border-color: #059669;
-    }
-
-    .custom-checkbox:checked::after {
-        content: '✔';
-        color: white;
-        font-size: 0.8rem;
-    }
-
-    .custom-checkbox:focus {
-        outline: none;
-        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.4); /* Tailwind focus:ring-emerald-500 */
-    }
-
-    /* Animation for excluded items */
-    .item-excluded-animation {
-        animation: fadeOut 0.5s forwards;
-    }
-
-    .item-included-animation {
-        animation: fadeIn 0.5s forwards;
-    }
-
-    .line-through-animation {
-        text-decoration: line-through;
-        opacity: 0.6;
-        transition: text-decoration 0.5s ease, opacity 0.5s ease;
-    }
-    
-    .no-line-through {
-        text-decoration: none;
-        opacity: 1;
-        transition: text-decoration 0.5s ease, opacity 0.5s ease;
-    }
-
-    @keyframes fadeOut {
-        from {
-            opacity: 1;
-            transform: scale(1);
-        }
-        to {
-            opacity: 0.5;
-            transform: scale(0.98);
-        }
-    }
-
-    @keyframes fadeIn {
-        from {
-            opacity: 0.5;
-            transform: scale(0.98);
-        }
-        to {
-            opacity: 1;
-            transform: scale(1);
-        }
-    }
-
+  .form-input {
+    background-color: rgba(31, 41, 55, 0.7);
+    border: 1px solid #374151;
+  }
+  .form-input:focus {
+    border-color: #10b981;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.4);
+    outline: none;
+  }
+  .item-enter {
+    animation: item-in 0.5s ease-out forwards;
+  }
+  @keyframes item-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .custom-checkbox {
+    appearance: none;
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 2px solid #4b5563;
+    border-radius: 0.25rem;
+    background-color: #1f2937;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, border-color 0.2s;
+  }
+  .custom-checkbox:checked {
+    background-color: #059669;
+    border-color: #059669;
+  }
+  .custom-checkbox:checked::after {
+    content: "✔";
+    color: white;
+    font-size: 0.8rem;
+  }
+  .custom-checkbox:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.4);
+  }
+  .item-excluded-animation { animation: fadeOut 0.5s forwards; }
+  .item-included-animation { animation: fadeIn 0.5s forwards; }
+  .line-through-animation { text-decoration: line-through; opacity: 0.6; transition: text-decoration 0.5s ease, opacity 0.5s ease; }
+  .no-line-through { text-decoration: none; opacity: 1; transition: text-decoration 0.5s ease, opacity 0.5s ease; }
+  @keyframes fadeOut { from { opacity: 1; } to { opacity: 0.5; } }
+  @keyframes fadeIn { from { opacity: 0.5; } to { opacity: 1; } }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <h1 class="text-3xl font-bold text-white mb-8 scroll-animate">Welcome back, {{ username }}!</h1>
-
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div class="lg:col-span-2 space-y-8">
-
-            <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6 shadow-sm scroll-animate"
-                style="transition-delay: 100ms;">
-                <h2 class="text-2xl font-semibold text-white mb-4">Add to Your Collection</h2>
-                <form id="add-item-form" class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input type="text" name="title" placeholder="Title" required
-                            class="block w-full px-3 py-2 text-white rounded-md form-input">
-                        <input type="text" name="link" placeholder="Link/URL (optional)"
-                            class="block w-full px-3 py-2 text-white rounded-md form-input">
-                    </div>
-                    <div>
-                        <label for="section-select"
-                            class="block text-sm font-medium text-gray-400 mb-2">Category</label>
-                        <select id="section-select" name="section"
-                            class="block w-full px-3 py-2 text-white rounded-md form-input">
-                            <option value="movies">Movie</option>
-                            <option value="songs">Song</option>
-                            <option value="bookmarks">Bookmark</option>
-                            <option value="books">Book</option>
-                        </select>
-                    </div>
-                    <button type="submit"
-                        class="w-full md:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 px-6 rounded-md cta-button">Add
-                        Item</button>
-                </form>
-            </div>
-
-            <div class="bg-gray-800/50 border border-gray-700 rounded-xl shadow-sm scroll-animate"
-                style="transition-delay: 200ms;">
-                <div class="p-6">
-                    <h2 class="text-2xl font-semibold text-white mb-4">Your Collection</h2>
-                    <div class="border-b border-gray-700">
-                        <nav id="tab-nav" class="-mb-px flex space-x-6" aria-label="Tabs">
-                            {% for section in data.keys() %}
-                            <button
-                                class="capitalize whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm focus:outline-none tab-button"
-                                data-target="#tab-{{ section }}">{{ section }}</button>
-                            {% endfor %}
-                        </nav>
-                    </div>
-                </div>
-                <div class="p-6">
-                    {% for section, items in data.items() %}
-                    <div id="tab-{{ section }}" class="tab-panel space-y-3">
-                        {% for item in items %}
-                        <div id="item-{{ section }}-{{ item.id }}"
-                            class="flex justify-between items-center bg-gray-900/70 p-3 rounded-lg hover:bg-gray-700/50 transition-colors duration-200">
-                            <div class="flex items-center flex-grow min-w-0">
-                                <input type="checkbox"
-                                       class="exclude-from-rec-checkbox custom-checkbox mr-3"
-                                       data-section="{{ section }}"
-                                       data-id="{{ item.id }}"
-                                       data-title="{{ item.title }}">
-                                <a href="{{ item.link }}" target="_blank" rel="noopener noreferrer"
-                                    class="text-emerald-400 hover:text-emerald-300 truncate item-title-text" title="{{ item.title }}">{{
-                                    item.title }}</a>
-                            </div>
-                            <button data-section="{{ section }}" data-id="{{ item.id }}"
-                                class="delete-item-btn text-gray-500 hover:text-red-500 font-bold ml-4 transition-colors duration-200">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round" class="pointer-events-none">
-                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                    <path
-                                        d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
-                                    </path>
-                                    <line x1="10" y1="11" x2="10" y2="17"></line>
-                                    <line x1="14" y1="11" x2="14" y2="17"></line>
-                                </svg>
-                            </button>
-                        </div>
-                        {% endfor %}
-                        <div class="no-items-message text-center py-8 {% if items %}hidden{% endif %}">
-                            <p class="text-gray-500">No items in this section yet.</p>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
+  <h1 class="text-3xl font-bold text-white mb-8">Welcome back, {{ username }}!</h1>
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="lg:col-span-2 space-y-8">
+      <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
+        <h2 class="text-2xl font-semibold text-white mb-4">Add to Your Collection</h2>
+        <form id="add-item-form" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input type="text" name="title" placeholder="Title" required class="block w-full px-3 py-2 text-white rounded-md form-input" />
+            <input type="text" name="link" placeholder="Link/URL (optional, AI will find one)" class="block w-full px-3 py-2 text-white rounded-md form-input" />
+          </div>
+          <div>
+            <label for="section-select" class="block text-sm font-medium text-gray-400 mb-2">Category</label>
+            <select id="section-select" name="section" class="block w-full px-3 py-2 text-white rounded-md form-input">
+              <option value="movies">Movie / TV Show</option>
+              <option value="songs">Song</option>
+              <option value="bookmarks">Bookmark</option>
+              <option value="books">Book</option>
+            </select>
+          </div>
+          <button type="submit" class="w-full md:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 px-6 rounded-md cta-button">
+            Add Item
+          </button>
+        </form>
+      </div>
+      <div class="bg-gray-800/50 border border-gray-700 rounded-xl">
+        <div class="p-6">
+          <h2 class="text-2xl font-semibold text-white mb-4">Your Collection</h2>
+          <div class="border-b border-gray-700">
+            <nav id="tab-nav" class="-mb-px flex space-x-6" aria-label="Tabs">
+              {% for section in data.keys() %}
+              <button class="capitalize whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm focus:outline-none tab-button" data-target="#tab-{{ section }}">
+                {{ section }}
+              </button>
+              {% endfor %}
+            </nav>
+          </div>
         </div>
-
-        <div class="lg-col-span-1 space-y-8">
-            <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6 feature-card ai-feature-card shadow-sm scroll-animate"
-                style="transition-delay: 300ms;">
-                <div class="flex items-center mb-4">
-                    <div class="bg-gray-700 h-10 w-10 rounded-lg flex items-center justify-center mr-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                            class="text-emerald-300">
-                            <path
-                                d="M9.5 2.1c.2-.5.8-.8 1.4-.8h1.2c.6 0 1.2.3 1.4.8l.9 2.1c.2.5.7.8 1.2.8h2.3c.6 0 1.1.4 1.2.9l.5 2.5c.1.5-.2 1-.7 1.2l-2 .9c-.4.2-.7.6-.5 1.1l1.1 2.4c.2.5 0 1.1-.5 1.3l-2.1.9c-.5.2-1 .1-1.3-.2l-1.8-1.8c-.4-.4-1-.4-1.4 0l-1.8 1.8c-.3.3-.8.4-1.3.2l-2.1-.9c-.5-.2-.7-.8-.5-1.3l1.1-2.4c.2-.5-.1-1-.5-1.1l-2-.9c-.5-.2-.8-.7-.7-1.2l.5-2.5c.1-.5.6-.9 1.2-.9h2.3c.5 0 1-.3 1.2-.8l.9-2.1z">
-                            </path>
-                        </svg>
-                    </div>
-                    <h2 class="text-2xl font-semibold text-white">Recommendations</h2>
+        <div class="p-6">
+          {% for section, items in data.items() %}
+          <div id="tab-{{ section }}" class="tab-panel space-y-3">
+            {% for item in items %}
+            <div id="item-{{ section }}-{{ item.id }}" class="flex justify-between items-center bg-gray-900/70 p-3 rounded-lg hover:bg-gray-700/50 transition-colors">
+              <div class="flex items-center flex-grow min-w-0">
+                <input type="checkbox" class="exclude-from-rec-checkbox custom-checkbox mr-4 flex-shrink-0" data-section="{{ section }}" data-id="{{ item.id }}" data-title="{{ item.title }}" />
+                {% if section == 'songs' and item.album_art_url %}
+                <img src="{{ item.album_art_url }}" alt="Album Art" class="w-10 h-10 rounded-md mr-4 object-cover flex-shrink-0" />
+                {% endif %}
+                <div class="flex-grow min-w-0">
+                  <a href="{{ item.link }}" target="_blank" rel="noopener noreferrer" class="text-emerald-400 hover:text-emerald-300 truncate item-title-text block" title="{{ item.title }}">{{ item.title }}</a>
                 </div>
-
-                <div id="recommendation-container"></div>
-
-                <div id="initial-rec-options">
-                    <button id="surprise-btn" type="button"
-                        class="w-full bg-teal-600 hover:bg-teal-500 text-white font-semibold py-3 px-4 rounded-md cta-button">Get
-Recommendations </button>
-                    <div id="recommendation-options" class="hidden space-y-3 pt-4">
-                        <p class="text-sm text-gray-400 text-center">I'd like a recommendation for ...</p>
-                        <button data-category="movies"
-                            class="rec-btn w-full bg-gradient-to-r from-sky-500 to-indigo-500 hover:from-sky-600 hover:to-indigo-600 text-white font-semibold py-2 px-4 rounded-md cta-button">Movies 🎥
-                            </button>
-                        <button data-category="songs"
-                            class="rec-btn w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold py-2 px-4 rounded-md cta-button">
-                            Songs 🎶 </button>
-                        <button data-category="books"
-                            class="rec-btn w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold py-2 px-4 rounded-md cta-button">Books 📚
-                            </button>
-                    </div>
-                </div>
+              </div>
+              <button data-section="{{ section }}" data-id="{{ item.id }}" class="delete-item-btn text-gray-500 hover:text-red-500 font-bold ml-4 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="pointer-events-none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+              </button>
             </div>
+            {% endfor %}
+            <div class="no-items-message text-center py-8 {% if items %}hidden{% endif %}">
+              <p class="text-gray-500">No items in this section yet.</p>
+            </div>
+          </div>
+          {% endfor %}
         </div>
+      </div>
     </div>
+    <div class="lg-col-span-1 space-y-8">
+      <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
+        <div class="flex items-center mb-4">
+          <div class="bg-gray-700 h-10 w-10 rounded-lg flex items-center justify-center mr-4">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-emerald-300"><path d="M9.5 2.1c.2-.5.8-.8 1.4-.8h1.2c.6 0 1.2.3 1.4.8l.9 2.1c.2.5.7.8 1.2.8h2.3c.6 0 1.1.4 1.2.9l.5 2.5c.1.5-.2 1-.7 1.2l-2 .9c-.4.2-.7.6-.5 1.1l1.1 2.4c.2.5 0 1.1-.5 1.3l-2.1.9c-.5.2-1 .1-1.3-.2l-1.8-1.8c-.4-.4-1-.4-1.4 0l-1.8 1.8c-.3.3-.8.4-1.3.2l-2.1-.9c-.5-.2-.7-.8-.5-1.3l1.1-2.4c.2-.5-.1-1-.5-1.1l-2-.9c-.5-.2-.8-.7-.7-1.2l.5-2.5c.1-.5.6-.9 1.2-.9h2.3c.5 0 1-.3 1.2-.8l.9-2.1z"></path></svg>
+          </div>
+          <h2 class="text-2xl font-semibold text-white">Recommendations</h2>
+        </div>
+        <div id="recommendation-container"></div>
+        <div id="initial-rec-options" class="space-y-3 pt-4">
+          <p class="text-sm text-gray-400 text-center">Get recommendations for...</p>
+          <button data-category="movies" class="rec-btn w-full bg-gradient-to-r from-sky-500 to-indigo-500 hover:from-sky-600 hover:to-indigo-600 text-white font-semibold py-2 px-4 rounded-md cta-button">Movies 🎥</button>
+          <button data-category="songs" class="rec-btn w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold py-2 px-4 rounded-md cta-button">Songs 🎶</button>
+          <button data-category="books" class="rec-btn w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold py-2 px-4 rounded-md cta-button">Books 📚</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    // --- STATE MANAGEMENT ---
-    let dislikedItems = {}; // { movies: ['title1', 'title2'], songs: [...] } - items AI suggested and user skipped
-    let excludedFromRecs = {}; // { movies: ['titleA', 'titleB'], songs: [...] } - items user explicitly excluded via checkbox
+  function initDashboard() {
+    let dislikedItems = {};
+    let excludedFromRecs = {};
 
-    // --- DOM MANIPULATION & RENDERING ---
     function createItemElement(item) {
-        const div = document.createElement('div');
-        div.id = `item-${item.section}-${item.id}`;
-        div.className = 'flex justify-between items-center bg-gray-900/70 p-3 rounded-lg hover:bg-gray-700/50 transition-colors duration-200 item-enter';
-        div.innerHTML = `
+      const div = document.createElement("div");
+      div.id = `item-${item.section}-${item.id}`;
+      div.className = "flex justify-between items-center bg-gray-900/70 p-3 rounded-lg hover:bg-gray-700/50 transition-colors item-enter";
+      let albumArtHtml = "";
+      if (item.section === "songs" && item.album_art_url) {
+        albumArtHtml = `<img src="${item.album_art_url}" alt="Album Art" class="w-10 h-10 rounded-md mr-4 object-cover flex-shrink-0">`;
+      }
+      div.innerHTML = `
+        <div class="flex items-center flex-grow min-w-0">
+          <input type="checkbox" class="exclude-from-rec-checkbox custom-checkbox mr-4 flex-shrink-0" data-section="${item.section}" data-id="${item.id}" data-title="${item.title}">
+          ${albumArtHtml}
+          <div class="flex-grow min-w-0">
+            <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="text-emerald-400 hover:text-emerald-300 truncate item-title-text block" title="${item.title}">${item.title}</a>
+          </div>
+        </div>
+        <button data-section="${item.section}" data-id="${item.id}" class="delete-item-btn text-gray-500 hover:text-red-500 font-bold ml-4 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="pointer-events-none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+        </button>
+      `;
+      div.querySelector(".delete-item-btn").addEventListener("click", handleDeleteItem);
+      div.querySelector(".exclude-from-rec-checkbox").addEventListener("change", handleExcludeFromRecsChange);
+      return div;
+    }
+
+    function renderRecommendations(recs) {
+      const container = document.getElementById("recommendation-container");
+      let itemsHtml = recs.results.map((item) => {
+        let albumArtHtml = "";
+        if (recs.section === "songs" && item.album_art_url) {
+          albumArtHtml = `<img src="${item.album_art_url}" alt="Album art" class="w-8 h-8 rounded-sm mr-3 object-cover flex-shrink-0">`;
+        }
+        return `
+          <div class="flex justify-between items-center text-left bg-gray-800/50 p-2 rounded-md">
             <div class="flex items-center flex-grow min-w-0">
-                <input type="checkbox"
-                       class="exclude-from-rec-checkbox custom-checkbox mr-3"
-                       data-section="${item.section}"
-                       data-id="${item.id}"
-                       data-title="${item.title}">
-                <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="text-emerald-400 hover:text-emerald-300 truncate item-title-text" title="${item.title}">${item.title}</a>
+              ${albumArtHtml}
+              <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="text-emerald-400 hover:text-emerald-300 text-sm font-semibold truncate pr-2 block" title="${item.title}">${item.title}</a>
             </div>
-            <button data-section="${item.section}" data-id="${item.id}" class="delete-item-btn text-gray-500 hover:text-red-500 font-bold ml-4 transition-colors duration-200">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pointer-events-none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+            <button data-link="${item.link}" data-title="${item.title}" data-section="${recs.section}" class="add-rec-btn text-gray-400 hover:text-green-400 transition-colors ml-2 flex-shrink-0" title="Add to your collection">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="pointer-events-none"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             </button>
+          </div>
         `;
-        div.querySelector('.delete-item-btn').addEventListener('click', handleDeleteItem);
-        div.querySelector('.exclude-from-rec-checkbox').addEventListener('change', handleExcludeFromRecsChange);
-        return div;
+      }).join("");
+      container.innerHTML = `
+        <div class="bg-gray-900/50 p-4 rounded-lg mb-4 text-center space-y-3">
+          <p class="text-sm text-gray-400">Based on <strong class="font-semibold text-gray-300">${recs.based_on}</strong>, you might like:</p>
+          <div class="space-y-2">${itemsHtml}</div>
+          <button data-category="${recs.section}" class="rec-btn w-full mt-4 text-sm bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-700/80 text-white font-semibold py-2 px-4 rounded-md cta-button">Get New Recommendations</button>
+        </div>
+      `;
+      attachRecommendationEventListeners();
     }
 
-    function initializeMovieTooltips() {
-        const movieLinks = document.querySelectorAll('a[data-rec-section="movies"]');
-        movieLinks.forEach(link => {
-            const title = link.dataset.title;
-            const reason = link.dataset.reason;
-            if (!reason) return;
-
-            const tooltipContent = `
-                <div class="text-left max-w-xs">
-                    <h4 class="font-bold text-lg text-white mb-2">${title}</h4>
-                    <p class="text-sm text-gray-300 italic">"${reason}"</p>
-                </div>
-            `;
-            
-            tippy(link, {
-                content: tooltipContent,
-                allowHTML: true,
-                theme: 'dark-gradient',
-                animation: 'fade',
-                duration: [250, 200],
-                placement: 'top-start',
-                interactive: false,
-            });
-        });
-    }
-
-function renderRecommendations(recs) {
-        const container = document.getElementById('recommendation-container');
-        let itemsHtml = recs.results.map(item => `
-            <div class="flex justify-between items-center text-left bg-gray-800/50 p-2 rounded-md">
-                <div class="flex-grow min-w-0">
-                    <a href="${item.link}" 
-                       target="_blank" 
-                       rel="noopener noreferrer" 
-                       class="text-emerald-400 hover:text-emerald-300 text-sm font-semibold truncate pr-2 block"
-                       data-rec-section="${recs.section}"
-                       data-title="${item.title}"
-                       data-reason="${item.reason || ''}"
-                    >${item.title}</a>
-                </div>
-                <button data-link="${item.link}" data-title="${item.title}" data-section="${recs.section}" class="add-rec-btn text-gray-400 hover:text-green-400 transition-colors duration-200 ml-2 flex-shrink-0" title="Add to your collection">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="pointer-events-none"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                </button>
-            </div>
-        `).join('');
-
-        let artistFeedbackForm = '';
-        if (recs.section === 'songs') {
-            artistFeedbackForm = `
-                <div class="mt-4 pt-4 border-t border-gray-700/50">
-                    <form id="artist-feedback-form" class="space-y-2">
-                        <p class="text-xs text-center text-gray-400">Didn't like these? Give us an artist's name for refined suggestions.</p>
-                        <div class="flex gap-2">
-                            <input type="text" name="artist_preference" placeholder="Artist's Name" class="block w-full px-3 py-2 text-white rounded-md text-sm form-input">
-                            <button type="submit" data-category="songs" class="rec-btn bg-teal-600 hover:bg-teal-500 text-white font-semibold py-2 px-4 rounded-md text-sm cta-button flex-shrink-0">Refine</button>
-                        </div>
-                    </form>
-                </div>
-            `;
-        }
-
-        container.innerHTML = `
-            <div class="bg-gray-900/50 p-4 rounded-lg mb-4 text-center space-y-3">
-                <p class="text-sm text-gray-400">Based on <strong class="font-semibold text-gray-300">${recs.based_on}</strong>, you might like:</p>
-                <div class="space-y-2">${itemsHtml}</div>
-                <button data-category="${recs.section}" class="rec-btn w-full mt-4 text-sm bg-gradient-to-r from-gray-700/50 to-gray-800/50 hover:from-gray-700/80 hover:to-gray-800/80 text-white font-semibold py-2 px-4 rounded-md cta-button">
-                    Get New Recommendations 
-                </button>
-                ${artistFeedbackForm}
-            </div>
-        `;
-        
-        if (recs.section === 'movies') {
-            initializeMovieTooltips();
-        }
-        attachRecommendationEventListeners();
-    }
-
-    // --- EVENT HANDLERS & LOGIC ---
     async function handleAddItem(e) {
-        e.preventDefault();
-        const form = e.target;
-        const data = {
-            title: form.elements.title.value,
-            link: form.elements.link.value,
-            section: form.elements.section.value
-        };
-
-        const response = await fetch("{{ url_for('api_add_item') }}", {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-        const result = await response.json();
-        if (result.status === 'success') {
-            const list = document.querySelector(`#tab-${result.item.section}`);
-            list.querySelector('.no-items-message')?.classList.add('hidden');
-            const newItemEl = createItemElement(result.item);
-            list.insertBefore(newItemEl, list.firstChild);
-            form.reset();
-        }
-        showFlashMessage(result.message, result.status);
+      e.preventDefault();
+      const form = e.target;
+      const data = { title: form.elements.title.value, link: form.elements.link.value, section: form.elements.section.value };
+      const response = await fetch("{{ url_for('api_add_item') }}", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+      const result = await response.json();
+      if (result.status === "success") {
+        const list = document.querySelector(`#tab-${result.item.section}`);
+        list.querySelector(".no-items-message")?.classList.add("hidden");
+        const newItemEl = createItemElement(result.item);
+        list.insertBefore(newItemEl, list.firstChild);
+        form.reset();
+      }
+      showFlashMessage(result.message, result.status);
     }
 
     async function handleDeleteItem(e) {
-        const button = e.target.closest('.delete-item-btn');
-        const itemEl = button.closest('div[id^="item-"]'); // Get the item's main div
-        const { section, id } = button.dataset;
-
-        // Apply fade-out effect immediately
-        itemEl.classList.add('item-excluded-animation');
-
-        const response = await fetch(`/api/delete_item/${section}/${id}`, { method: 'POST' });
-        const result = await response.json();
-        if (result.status === 'success') {
-            // Remove item from excludedFromRecs if it was checked
-            const checkbox = itemEl.querySelector('.exclude-from-rec-checkbox');
-            if (checkbox && excludedFromRecs[section]) {
-                const index = excludedFromRecs[section].indexOf(checkbox.dataset.title);
-                if (index > -1) {
-                    excludedFromRecs[section].splice(index, 1);
-                }
-            }
-            // Wait for animation to finish before removing from DOM
-            itemEl.addEventListener('animationend', () => {
-                itemEl.remove();
-                const list = document.querySelector(`#tab-${section}`);
-                if (!list.querySelector('div[id^="item-"]')) {
-                    list.querySelector('.no-items-message')?.classList.remove('hidden');
-                }
-            }, { once: true });
-            
-        } else {
-            // If deletion failed, remove the fade-out class
-            itemEl.classList.remove('item-excluded-animation');
+      const button = e.target.closest(".delete-item-btn");
+      const itemEl = button.closest('div[id^="item-"]');
+      const { section, id } = button.dataset;
+      itemEl.classList.add("item-excluded-animation");
+      const response = await fetch(`/api/delete_item/${section}/${id}`, { method: "POST" });
+      const result = await response.json();
+      if (result.status === "success") {
+        const checkbox = itemEl.querySelector(".exclude-from-rec-checkbox");
+        if (checkbox && excludedFromRecs[section]) {
+          const index = excludedFromRecs[section].indexOf(checkbox.dataset.title);
+          if (index > -1) excludedFromRecs[section].splice(index, 1);
         }
-        showFlashMessage(result.message, result.status);
+        itemEl.addEventListener("animationend", () => {
+          itemEl.remove();
+          const list = document.querySelector(`#tab-${section}`);
+          if (!list.querySelector('div[id^="item-"]')) list.querySelector(".no-items-message")?.classList.remove("hidden");
+        }, { once: true });
+      } else {
+        itemEl.classList.remove("item-excluded-animation");
+      }
+      showFlashMessage(result.message, result.status);
     }
 
     function handleExcludeFromRecsChange(e) {
-        const checkbox = e.target;
-        const { section, title } = checkbox.dataset;
-        const itemElement = checkbox.closest('div[id^="item-"]');
-        const itemTitleLink = itemElement.querySelector('.item-title-text');
-
-        if (!excludedFromRecs[section]) {
-            excludedFromRecs[section] = [];
-        }
-
-        if (checkbox.checked) {
-            if (!excludedFromRecs[section].includes(title)) {
-                excludedFromRecs[section].push(title);
-            }
-            itemElement.classList.add('item-excluded-animation');
-            itemElement.classList.remove('item-included-animation'); // Ensure reverse animation isn't active
-            itemTitleLink.classList.add('line-through-animation');
-            itemTitleLink.classList.remove('no-line-through');
-
-        } else {
-            const index = excludedFromRecs[section].indexOf(title);
-            if (index > -1) {
-                excludedFromRecs[section].splice(index, 1);
-            }
-            itemElement.classList.remove('item-excluded-animation');
-            itemElement.classList.add('item-included-animation'); // Trigger fade in
-            itemTitleLink.classList.remove('line-through-animation');
-            itemTitleLink.classList.add('no-line-through'); // Ensure no line through
-        }
-        console.log('Excluded from Recommendations:', excludedFromRecs);
+      const checkbox = e.target;
+      const { section, title } = checkbox.dataset;
+      const itemElement = checkbox.closest('div[id^="item-"]');
+      const itemTitleLink = itemElement.querySelector(".item-title-text");
+      if (!excludedFromRecs[section]) excludedFromRecs[section] = [];
+      if (checkbox.checked) {
+        if (!excludedFromRecs[section].includes(title)) excludedFromRecs[section].push(title);
+        itemElement.classList.add("item-excluded-animation");
+        itemElement.classList.remove("item-included-animation");
+        itemTitleLink.classList.add("line-through-animation");
+        itemTitleLink.classList.remove("no-line-through");
+      } else {
+        const index = excludedFromRecs[section].indexOf(title);
+        if (index > -1) excludedFromRecs[section].splice(index, 1);
+        itemElement.classList.remove("item-excluded-animation");
+        itemElement.classList.add("item-included-animation");
+        itemTitleLink.classList.remove("line-through-animation");
+        itemTitleLink.classList.add("no-line-through");
+      }
     }
 
     async function handleGetRecommendation(e) {
-        e.preventDefault();
-        const triggerElement = e.target;
-        const category = triggerElement.dataset.category;
-        
-        if (!category) {
-            console.error("Recommendation category is undefined.");
-            return;
+      e.preventDefault();
+      const triggerElement = e.target;
+      const category = triggerElement.dataset.category;
+      if (!category) return;
+      if (!dislikedItems[category]) dislikedItems[category] = [];
+      document.getElementById("recommendation-container").innerHTML = '<p class="text-center text-gray-400">thinkinggg...</p>';
+      let payload = { disliked_items: dislikedItems[category], excluded_from_recs: excludedFromRecs[category] || [] };
+      const response = await fetch(`/api/recommend/${category}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const result = await response.json();
+      if (result.status === "success" && result.recommendations) {
+        if (result.recommendations.results && result.recommendations.results.length > 0) {
+          result.recommendations.results.forEach((item) => {
+            if (!dislikedItems[category].includes(item.title)) dislikedItems[category].push(item.title);
+          });
         }
-
-        // Initialize the disliked array for the category if it doesn't exist.
-        if (!dislikedItems[category]) {
-            dislikedItems[category] = [];
-        }
-        
-        document.getElementById('recommendation-container').innerHTML = '<p class="text-center text-gray-400">thinkinggg...</p>';
-
-        let payload = {
-            disliked_items: dislikedItems[category],
-            excluded_from_recs: excludedFromRecs[category] || [] // Send the new excluded items
-        };
-        
-        const feedbackForm = triggerElement.closest('form#artist-feedback-form');
-        if (feedbackForm) {
-            const artistInput = feedbackForm.elements.artist_preference;
-            if (artistInput && artistInput.value.trim()) {
-                payload.artist_preference = artistInput.value.trim();
-            }
-        }
-
-        const response = await fetch(`/api/recommend/${category}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        const result = await response.json();
-
-        if (result.status === 'success' && result.recommendations) {
-            // Add the new recommendations to the disliked list for next time
-            if (result.recommendations.results && result.recommendations.results.length > 0) {
-                result.recommendations.results.forEach(item => {
-                    if (!dislikedItems[category].includes(item.title)) {
-                        dislikedItems[category].push(item.title);
-                    }
-                });
-            }
-            renderRecommendations(result.recommendations);
-        } else {
-            document.getElementById('recommendation-container').innerHTML = '';
-            showFlashMessage(result.message || 'Could not get recommendations.', 'error');
-        }
+        renderRecommendations(result.recommendations);
+      } else {
+        document.getElementById("recommendation-container").innerHTML = "";
+        document.getElementById("initial-rec-options").classList.remove("hidden");
+        showFlashMessage(result.message || "Could not get recommendations.", "error");
+      }
     }
 
     function attachRecommendationEventListeners() {
-        document.querySelectorAll('.add-rec-btn').forEach(btn => btn.addEventListener('click', handleAddRecommendation));
-        document.querySelectorAll('.rec-btn').forEach(btn => btn.addEventListener('click', handleGetRecommendation));
+      document.querySelectorAll(".add-rec-btn").forEach((btn) => btn.addEventListener("click", handleAddRecommendation));
+      document.querySelectorAll(".rec-btn").forEach((btn) => btn.addEventListener("click", handleGetRecommendation));
     }
 
     async function handleAddRecommendation(e) {
-        const button = e.target.closest('.add-rec-btn');
-        const { link, title, section } = button.dataset;
-        const data = { link, title, section };
-
-        const response = await fetch("{{ url_for('api_add_item') }}", {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-        const result = await response.json();
-        if (result.status === 'success') {
-            const list = document.querySelector(`#tab-${result.item.section}`);
-            list.querySelector('.no-items-message')?.classList.add('hidden');
-            const newItemEl = createItemElement(result.item);
-            list.insertBefore(newItemEl, list.firstChild);
-            button.closest('.flex').innerHTML = '<p class="text-xs text-emerald-400 p-2">Added!</p>';
-        } else {
-            showFlashMessage(result.message, result.status);
-        }
+      const button = e.target.closest(".add-rec-btn");
+      const { link, title, section } = button.dataset;
+      const response = await fetch("{{ url_for('api_add_item') }}", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ link, title, section }) });
+      const result = await response.json();
+      if (result.status === "success") {
+        const list = document.querySelector(`#tab-${result.item.section}`);
+        list.querySelector(".no-items-message")?.classList.add("hidden");
+        const newItemEl = createItemElement(result.item);
+        list.insertBefore(newItemEl, list.firstChild);
+        button.closest(".flex").innerHTML = '<p class="text-xs text-emerald-400 p-2">Added!</p>';
+      } else {
+        showFlashMessage(result.message, result.status);
+      }
     }
 
     // --- INITIAL SETUP ---
-    const tabs = document.querySelectorAll('.tab-button');
-    const panels = document.querySelectorAll('.tab-panel');
+    const tabs = document.querySelectorAll(".tab-button");
+    const panels = document.querySelectorAll(".tab-panel");
     function setActiveTab(tabButton) {
-        tabs.forEach(b => { b.classList.remove('text-emerald-400', 'border-emerald-400'); b.classList.add('text-gray-400', 'border-transparent', 'hover:text-gray-300', 'hover:border-gray-500'); });
-        panels.forEach(p => { p.style.display = 'none'; });
-        tabButton.classList.add('text-emerald-400', 'border-emerald-400');
-        tabButton.classList.remove('text-gray-400', 'border-transparent');
-        const targetPanel = document.querySelector(tabButton.dataset.target);
-        if (targetPanel) { targetPanel.style.display = 'block'; }
+      tabs.forEach((b) => {
+        b.classList.remove("text-emerald-400", "border-emerald-400");
+        b.classList.add("text-gray-400", "border-transparent");
+      });
+      panels.forEach((p) => { p.style.display = "none"; });
+      tabButton.classList.add("text-emerald-400", "border-emerald-400");
+      tabButton.classList.remove("text-gray-400", "border-transparent");
+      document.querySelector(tabButton.dataset.target).style.display = "block";
     }
-    if (tabs.length > 0) { setActiveTab(tabs[0]); }
-    tabs.forEach(tab => tab.addEventListener('click', () => setActiveTab(tab)));
-
-    document.getElementById('add-item-form')?.addEventListener('submit', handleAddItem);
-    document.querySelectorAll('.delete-item-btn').forEach(btn => btn.addEventListener('click', handleDeleteItem));
-    
-    // Attach event listeners to existing checkboxes on page load
-    document.querySelectorAll('.exclude-from-rec-checkbox').forEach(checkbox => {
-        checkbox.addEventListener('change', handleExcludeFromRecsChange);
-        // Initialize excludedFromRecs based on initial checked state
-        const { section, title } = checkbox.dataset;
-        if (checkbox.checked) {
-            if (!excludedFromRecs[section]) {
-                excludedFromRecs[section] = [];
-            }
-            if (!excludedFromRecs[section].includes(title)) {
-                excludedFromRecs[section].push(title);
-            }
-            // Apply visual styles if already checked on load
-            const itemElement = checkbox.closest('div[id^="item-"]');
-            const itemTitleLink = itemElement.querySelector('.item-title-text');
-            itemElement.classList.add('item-excluded-animation');
-            itemTitleLink.classList.add('line-through-animation');
-        }
-    });
-
-    const surpriseBtn = document.getElementById('surprise-btn');
-    const recOptions = document.getElementById('recommendation-options');
-    if (surpriseBtn && recOptions) {
-        surpriseBtn.addEventListener('click', () => {
-            surpriseBtn.classList.add('hidden');
-            recOptions.classList.remove('hidden');
-            attachRecommendationEventListeners();
-        });
+    if (tabs.length > 0) {
+      setActiveTab(tabs[0]);
     }
-    document.querySelectorAll('.rec-btn').forEach(btn => btn.addEventListener('click', handleGetRecommendation));
-});
+    tabs.forEach((tab) => tab.addEventListener("click", () => setActiveTab(tab)));
+    document.getElementById("add-item-form")?.addEventListener("submit", handleAddItem);
+    document.querySelectorAll(".delete-item-btn").forEach((btn) => btn.addEventListener("click", handleDeleteItem));
+    document.querySelectorAll(".exclude-from-rec-checkbox").forEach((checkbox) => checkbox.addEventListener("change", handleExcludeFromRecsChange));
+    document.querySelectorAll(".rec-btn").forEach((btn) => btn.addEventListener("click", handleGetRecommendation));
+  }
+  document.addEventListener("DOMContentLoaded", initDashboard);
 </script>
 {% endblock %}
